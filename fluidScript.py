@@ -41,8 +41,10 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 # ground and simulation box
 ground = cmds.polyCube(w=10, h=1, d=10, name='ground#')
-
-
+ground1 = cmds.polyCube(w=1, h=6, d=10, name='ground#')
+ground2 = cmds.polyCube(w=10, h=6, d=1, name='ground#')
+cmds.move(5, 1, 0, ground1)
+cmds.move(0, 1, 5, ground2)
 
 cube = cmds.polyCube(w=6 , h=3, d=4, name='box#')
 
@@ -50,7 +52,7 @@ cmds.move(0, 1, 0, cube)
 cmds.select('box1.f[1]')
 cmds.delete()
 
-
+#Create induvidual materials for box and ground
 def applyMaterial(node):
     if cmds.objExists(node):
         shd = cmds.shadingNode('lambert', name="%s_lambert" % node, asShader=True)
@@ -68,7 +70,7 @@ def applyMaterial(node):
         cmds.sets(node, e=True, forceElement=shdSG)
         
 applyMaterial("ground1")
-
+cmds.setAttr( "ground1_lambert.color"  ,1,1,1,type = 'double3')
 
 #Adding Spheres
 count = 0
@@ -84,4 +86,25 @@ cmds.setAttr( 'lambert1.transparency', 0.7,0.7,0.7, type = 'double3' )
 cmds.setAttr( 'lambert1.refractions', 1 )
 cmds.setAttr( 'lambert1.refractiveIndex', 1.333 )
 cmds.setAttr( 'lambert1.color', 0.56471 , 0.94118  ,0.86275, type = 'double3' )
+
+#Algorithm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
