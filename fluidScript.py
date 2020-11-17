@@ -42,17 +42,33 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 # ground and simulation box
 ground = cmds.polyCube(w=10, h=1, d=10, name='ground#')
 
-cmds.select('ground1')
-cmds.setAttr('lambert3.transparency',0,0,0, type = 'double3' )
 
-cube = cmds.polyCube(w=6 , h=2, d=4, name='box#')
+
+cube = cmds.polyCube(w=6 , h=3, d=4, name='box#')
 
 cmds.move(0, 1, 0, cube)
 cmds.select('box1.f[1]')
 cmds.delete()
 
-cmds.select('box1')
-cmds.setAttr('lambert2.transparency',0.99, 0.99, 0.99, type = 'double3' )
+
+def applyMaterial(node):
+    if cmds.objExists(node):
+        shd = cmds.shadingNode('lambert', name="%s_lambert" % node, asShader=True)
+        shdSG = cmds.sets(name='%sSG' % shd, empty=True, renderable=True, noSurfaceShader=True)
+        cmds.connectAttr('%s.outColor' % shd, '%s.surfaceShader' % shdSG)
+        cmds.sets(node, e=True, forceElement=shdSG)    
+applyMaterial("box1")
+cmds.setAttr( "box1_lambert.transparency"  ,0.9,0.9,0.9,type = 'double3')
+
+def applyMaterial(node):
+    if cmds.objExists(node):
+        shd = cmds.shadingNode('lambert', name="%s_lambert" % node, asShader=True)
+        shdSG = cmds.sets(name='%sSG' % shd, empty=True, renderable=True, noSurfaceShader=True)
+        cmds.connectAttr('%s.outColor' % shd, '%s.surfaceShader' % shdSG)
+        cmds.sets(node, e=True, forceElement=shdSG)
+        
+applyMaterial("ground1")
+
 
 #Adding Spheres
 count = 0
@@ -64,4 +80,8 @@ for i in range( 0, 35 ):
             cmds.select('particle' + str(count)) 
             cmds.move(2.57-i*0.17+0.35, 1+j*0.17, 2.23-k*0.17-0.35,'particle' + str(count))
 
+cmds.setAttr( 'lambert1.transparency', 0.7,0.7,0.7, type = 'double3' )
+cmds.setAttr( 'lambert1.refractions', 1 )
+cmds.setAttr( 'lambert1.refractiveIndex', 1.333 )
+cmds.setAttr( 'lambert1.color', 0.56471 , 0.94118  ,0.86275, type = 'double3' )
 
