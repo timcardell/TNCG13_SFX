@@ -1,5 +1,6 @@
 import maya.cmds as cmds
-import sys
+import math
+import maya.mel as mel
 
 # delete unnessesary scene objects
 
@@ -87,13 +88,35 @@ cmds.setAttr( 'lambert1.refractions', 1 )
 cmds.setAttr( 'lambert1.refractiveIndex', 1.333 )
 cmds.setAttr( 'lambert1.color', 0.56471 , 0.94118  ,0.86275, type = 'double3' )
 
-#Algorithm
+#-----Fucntipns to main render loop-------#
 
+#create poly6 smoothing kernel
 
+def poly6Kernel(r, rj, h):
+    # create resulting vector
+    subtractedVec = []
+    xVal = r[0] - rj[0]
+    yVal = r[1] - rj[1]
+    zVal = r[2] - rj[2]
+    
+    #length of vector
+    length = math.sqrt(math.pow(xVal,2) + math.pow(yVal,2) + math.pow(zVal,2))
+    
+    #poly6kernel
+    resPoly6Kernel = 315/(64*3.14*math.pow(h,9))*math.pow((math.pow(h,2)-math.pow(length,2)),3)
+    
+    if length >= 0 or length <= h:
+        return resPoly6Kernel
+    else:
+        return 0.0
+    
+    
+    
+    
 
+res = poly6Kernel([3,2,2], [1,1,1], 2)
 
-
-
+print str(res)
 
 
 
