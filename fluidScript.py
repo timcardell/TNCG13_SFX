@@ -7,6 +7,7 @@ import maya.mel as mel
 groundList = cmds.ls('ground*')
 boxList = cmds.ls('box*')
 ParticleList = cmds.ls('Particle*')
+ListOfParticles = cmds.ls('Particle*',o=True, tr=True)
 if len(groundList) > 0:
     cmds.delete(groundList)
 
@@ -95,48 +96,6 @@ cmds.setAttr( 'lambert1.color', 0.56471 , 0.94118  ,0.86275, type = 'double3' )
 
 
 
-#Render Loop
-
-KeyFrames = 200
-cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
-startTime = cmds.playbackOptions( query = True, minTime = True )
-endTime = cmds.playbackOptions( query = True, maxTime = True )
-frame = startTime
-numOfParticles = count
-
-VelX = [0] * numOfParticles
-VelY = [0] * numOfParticles
-VelZ = [0] * numOfParticles
-
-PredictedPosX = [0] * numOfParticles
-PredictedPosY = [0] * numOfParticles
-PredictedPosZ = [0] * numOfParticles
-
-ListOfParticles = cmds.ls('Particle*',o=True, tr=True)
-size = 0
-for Particle in ListOfParticles:
-    cmds.select(Particle)
-    # only selecting the one sphere!
-    pos = [ cmds.getAttr(".translateX"),
-            cmds.getAttr(".translateY"),
-            cmds.getAttr(".translateZ") ]
-
-    PredictedPosX[size] = pos[0]
-    PredictedPosY[size] = pos[1]
-    PredictedPosZ[size] = pos[2]
-
-    size+=1
-
-    cmds.setKeyframe(".translateX", value=pos[0], time=frame)
-    cmds.setKeyframe(".translateY", value=pos[1], time=frame)
-    cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
-
-for i in range (1,KeyFrames+1):
-    print 'Frame: ' + str(i)
-
-
-
-
 
 
 #-----Fucntipns to main simulation loop-------#
@@ -174,13 +133,60 @@ def poly6Kernel(r, rj, h):
 
 #Find neigboring particles within a radius rad
 
-def findNeighboringParticles(rad, particlePos):
+def findNeighboringParticles(rad, ListOfParticles):
     neighborList = []
     
+    for Particle in ListOfParticle:
+        cmds.select(Particle)
 
 
 
 
 
-#res = poly6Kernel([3,2,2], [1,1,1], 2)
-#print str(res)
+
+
+
+#Render Loop
+
+KeyFrames = 200
+cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
+startTime = cmds.playbackOptions( query = True, minTime = True )
+endTime = cmds.playbackOptions( query = True, maxTime = True )
+frame = startTime
+numOfParticles = count
+
+VelX = [0] * numOfParticles
+VelY = [0] * numOfParticles
+VelZ = [0] * numOfParticles
+
+PredictedPosX = [0] * numOfParticles
+PredictedPosY = [0] * numOfParticles
+PredictedPosZ = [0] * numOfParticles
+
+
+size = 0
+for Particle in ListOfParticles:
+    cmds.select(Particle)
+    # only selecting the one sphere!
+    pos = [ cmds.getAttr(".translateX"),
+            cmds.getAttr(".translateY"),
+            cmds.getAttr(".translateZ") ]
+
+    PredictedPosX[size] = pos[0]
+    PredictedPosY[size] = pos[1]
+    PredictedPosZ[size] = pos[2]
+
+    size+=1
+
+    cmds.setKeyframe(".translateX", value=pos[0], time=frame)
+    cmds.setKeyframe(".translateY", value=pos[1], time=frame)
+    cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
+
+for i in range (1,KeyFrames+1):
+    print 'Frame: ' + str(i)
+
+
+
+
+
+
