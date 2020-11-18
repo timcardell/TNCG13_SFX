@@ -90,8 +90,6 @@ cmds.setAttr( 'lambert1.refractiveIndex', 1.333 )
 
 cmds.setAttr( 'lambert1.color', 0.56471 , 0.94118  ,0.86275, type = 'double3' )
 
-#Functions
-
 
 
 
@@ -141,8 +139,14 @@ for i in range (1,KeyFrames+1):
 
 
 
+#-----Fucntipns to main simulation loop-------#
+
 
 #create poly6 smoothing kernel
+
+
+def lengthVec(x, y, z):
+    return math.sqrt(math.pow(x,2) + math.pow(y,2) + math.pow(z,2))
 
 def poly6Kernel(r, rj, h):
     # create resulting vector
@@ -152,8 +156,8 @@ def poly6Kernel(r, rj, h):
     zVal = r[2] - rj[2]
 
     #length of vector
-    length = math.sqrt(math.pow(xVal,2) + math.pow(yVal,2) + math.pow(zVal,2))
 
+    length = lengthVec(xVal, yVal, zVal)   
     #poly6kernel
     resPoly6Kernel = 315/(64*3.14*math.pow(h,9))*math.pow((math.pow(h,2)-math.pow(length,2)),3)
 
@@ -161,6 +165,21 @@ def poly6Kernel(r, rj, h):
         return resPoly6Kernel
     else:
         return 0.0
+
+    
+    
+#res = poly6Kernel([3,2,2], [1,1,1], 2)
+#print str(res)
+
+
+#Find neigboring particles within a radius rad
+
+def findNeighboringParticles(rad, particlePos):
+    neighborList = []
+    
+
+
+
 
 
 #res = poly6Kernel([3,2,2], [1,1,1], 2)
