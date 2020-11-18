@@ -238,11 +238,6 @@ endTime = cmds.playbackOptions( query = True, maxTime = True )
 frame = startTime
 numOfParticles = count
 
-
-
-
-
-
 VelX = [0] * numOfParticles
 VelY = [0] * numOfParticles
 VelZ = [0] * numOfParticles
@@ -284,7 +279,7 @@ for j in range (0,KeyFrames):
     Iter = 0
     while Iter < MaxSolverIterations : 
      
-        for i in range (1,numOfParticles):
+        for i in range (0,numOfParticles):
             Lambda[i] = CalculateLambda(numOfParticles, PredictedPosition, Neighbours, ZeroRho, 0.001, h)
             
             
