@@ -126,17 +126,9 @@ def poly6Kernel(r, rj, h):
         return 0.0
 
 
-def CalculateLambda(nrOfParticles, Pos, Neighbours, ZeroRho, EPSILON, h):
-    
-    Lambda = [0]* nrOfParticles
-    
-    for i in range (0, nrOfParticles):
-        
-        for j in range (1, len(Neighbours[i])):
-           rjPos = Pos[Neighbours[j]]
-           rho_i += poly6Kernel(Pos[i], rjPos, h)
-        
-    return Lambda
+
+#res = poly6Kernel([3,2,2], [1,1,1], 2)
+#print str(res)
 
 
 def spikyGrad(ri, rj, h):
@@ -146,15 +138,65 @@ def spikyGrad(ri, rj, h):
     
     
     r = lengthVec(xVal, yVal, zVal)
-    
+    gradConstant = 15/(3.14*(math.pow(h,2))*math.pow((h-r),2))
     if r >= 0 or r <= h:
-        xGradient = 15/(3.14*(pow(h,2))*pow((h-r),2)*xVal/r)
-        yGradient = 15/(3.14*(pow(h,2))*pow((h-r),2)*yVal/r)
-        zGradient = 15/(3.14*(pow(h,2))*pow((h-r),2)*zVal/r)
-    gradVec= [xGradient, yGradient, zGradient]
+        xGradient = gradConstant*(xVal/r)
+        yGradient = gradConstant*(yVal/r)
+        zGradient = gradConstant*(zVal/r)
+        gradVec= [xGradient, yGradient, zGradient]
     
-    return gradVec
+        return gradVec
     
+    else:
+        return [0.0, 0.0, 0.0]
+    
+
+def vecMult(Vec1, Vec2):
+    tempVec = Vec1[0]*Vec2[0]+Vec1[1]*Vec2[1]+Vec1[2]*Vec2[2]
+    return tempVec
+    
+def scalarMult(Vec1, scalar):
+    tempVec = [Vec1[0]*scalar,Vec1[1]*scalar,Vec1[2]*scalar]
+    return tempVec    
+    
+def addVect(Vec1, Vec2):
+    tempVec = [Vec1[0]+Vec2[0],Vec1[1]+Vec2[1],Vec1[2]+Vec2[2]]
+    return tempVec      
+
+
+
+def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSILON, h):
+    rho_i = 0
+    C_i = 0
+    sumGradient = [0,0,0]
+    Lambda = [0]* nrOfParticles
+    
+    for i in range (0, nrOfParticles):
+        Pos = predictedPositions[i]
+        for j in range (0, len(Neighbours[i])):
+           cmds.select(ListOfParticles[Neighbours[i][j]])
+           rjPos = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ") ]
+          
+           rho_i += poly6Kernel(Pos, rjPos, h)
+           
+           gradientPk = spikyGrad(Pos, rjPos, h)
+
+           kernel =  poly6Kernel(Pos, rjPos, h)
+           
+           kernelDone = scalarMult(gradientPk,kernel)
+           
+           sumGradient = addVect(sumGradient,kernelDone)
+        
+        sumGradient = scalarMult(sumGradient,(1/ZeroRho))
+  
+        dotSum = VecMult(sumGradient,sumGradient)
+        
+        
+        C_i = (rho_i / ZeroRho)- 1
+        
+        Lambda[i] = ((-1)*C_i)/(dotSum + EPSILON)
+               
+    return Lambda
 
 
 #Find neigboring particles within a radius rad
@@ -167,7 +209,6 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
     for i in range (0,nrOfParticles):
        
         for j in range (0,nrOfParticles):
-        
             particleDistance = lengthVec(Pos[i][0]-Pos[j][0], Pos[i][1]-Pos[j][1], Pos[i][2]-Pos[j][2])
             #print 'dist:  ' + str(particleDistance)
             
@@ -178,24 +219,17 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
     return neighborMatrix
 
 
-# calculate delta position eq 12 in müller paper
 
-#def deltaP(lambdaa, rho_0, numOfParticles, pos, h):
-    #deltaPos = []
-    #for i in range numOfParticles:
-        #for j in range numOfParticles:
-            #pos
-            #sum += (lambdaa[i] + lambdaa[j])* poly6Kernel(posi, posj, h)
-    
 
 
 #Simulation Loop
 
 #Constants
 dt = 0.0016
-MaxSolverIterations = 40
+MaxSolverIterations = 1
 rad = 0.3
 ZeroRho = 1000
+h = 1
 
 KeyFrames = 1
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
@@ -245,16 +279,16 @@ for j in range (0,KeyFrames):
                  
     #Find Neighboring particles     
     for l in range (0,numOfParticles):
-          Neighbours[l] = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
-             
+          Neighbours = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
+            
     Iter = 0
     while Iter < MaxSolverIterations : 
      
-        for i in range (0,numOfParticles):
-            Lambda[i] = CalculateLambda(numOfParticles, Pos, Neighbours, ZeroRho, EPSILON, h)
+        for i in range (1,numOfParticles):
+            Lambda[i] = CalculateLambda(numOfParticles, PredictedPosition, Neighbours, ZeroRho, 0.001, h)
             
             
-        
+        print Lambda
         
         
         Iter +=1
