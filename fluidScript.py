@@ -131,10 +131,10 @@ for Particle in ListOfParticles:
     cmds.setKeyframe(".translateY", value=pos[1], time=frame)
     cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
 
-for i in range (1,KeyFrames+1):
-    print 'Frame: ' + str(i)
+for j in range (1,KeyFrames+1):
+    print 'Frame: ' + str(j)
 
-
+   for i in range (1,KeyFrames+1):
 
 
 
