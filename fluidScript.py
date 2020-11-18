@@ -131,6 +131,8 @@ def poly6Kernel(r, rj, h):
 #print str(res)
 
 
+
+
 #Find neigboring particles within a radius rad
 
 def findNeighboringParticles(rad, ListOfParticles):
@@ -155,15 +157,14 @@ endTime = cmds.playbackOptions( query = True, maxTime = True )
 frame = startTime
 numOfParticles = count
 
+dt = 0.0016
+MaxSolverIterations = 40
+
 VelX = [0] * numOfParticles
 VelY = [0] * numOfParticles
 VelZ = [0] * numOfParticles
 
-PredictedPosX = [0] * numOfParticles
-PredictedPosY = [0] * numOfParticles
-PredictedPosZ = [0] * numOfParticles
-
-
+PredictedPosition = [0]*numOfParticles
 size = 0
 for Particle in ListOfParticles:
     cmds.select(Particle)
@@ -171,16 +172,36 @@ for Particle in ListOfParticles:
     pos = [ cmds.getAttr(".translateX"),
             cmds.getAttr(".translateY"),
             cmds.getAttr(".translateZ") ]
-
-    PredictedPosX[size] = pos[0]
-    PredictedPosY[size] = pos[1]
-    PredictedPosZ[size] = pos[2]
-
+            
+    PredictedPosition[size] = [pos[0],pos[1],pos[2]]
     size+=1
 
     cmds.setKeyframe(".translateX", value=pos[0], time=frame)
     cmds.setKeyframe(".translateY", value=pos[1], time=frame)
     cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
+print PredictedPosition
 
-for i in range (1,KeyFrames+1):
-    print 'Frame: ' + str(i)
+for j in range (1,KeyFrames+1):
+    frame += 1
+  
+   # for i in range (0,numOfParticles):
+       #  VelY[i]+= dt*9.82
+       # PredictedPos[0][1] += dt*VelY[i] 
+        
+       
+    #findNeighboringParticles
+    
+    Iter = 0
+    while Iter < MaxSolverIterations : 
+     
+        
+        Iter +=1
+        
+        
+        
+        
+
+    
+    
+    
+    
