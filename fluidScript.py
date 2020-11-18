@@ -173,11 +173,14 @@ numOfParticles = count
 dt = 0.0016
 MaxSolverIterations = 40
 
+rad = 2
+
 VelX = [0] * numOfParticles
 VelY = [0] * numOfParticles
 VelZ = [0] * numOfParticles
 
 PredictedPosition = [0]*numOfParticles
+
 size = 0
 for Particle in ListOfParticles:
     cmds.select(Particle)
@@ -186,23 +189,22 @@ for Particle in ListOfParticles:
             cmds.getAttr(".translateY"),
             cmds.getAttr(".translateZ") ]
             
-    PredictedPosition[size] = [pos[0],pos[1],pos[2]]
+    PredictedPosition[size]= [pos[0],pos[1],pos[2]]
+
     size+=1
 
     cmds.setKeyframe(".translateX", value=pos[0], time=frame)
     cmds.setKeyframe(".translateY", value=pos[1], time=frame)
     cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
-print PredictedPosition
-
+ 
 for j in range (1,KeyFrames+1):
     frame += 1
   
-   # for i in range (0,numOfParticles):
-       #  VelY[i]+= dt*9.82
-       # PredictedPos[0][1] += dt*VelY[i] 
-        
-       
-    #findNeighboringParticles
+    for i in range (1,numOfParticles):
+         VelY[i]+= dt*9.82
+         PredictedPosition[i][1] += dt*VelY[i] 
+         findNeighboringParticles(nrOfParticles,PredictedPosition[i], rad)
+    
     Iter = 0
     while Iter < MaxSolverIterations : 
      
