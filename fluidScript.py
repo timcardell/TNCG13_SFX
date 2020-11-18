@@ -207,8 +207,14 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h):
         for j in range (1,numOfParticles):
             posi = pos[i]
             posj = pos[j]
-            sum += (lambdaa[i] + lambdaa[j])* poly6Kernel(posi, posj, h)
+            lambdaJ = lambdaa[neighbours[i][j]]
+            
+            spikyGradient = spikyGrad(pos1, posj, h)
+            sumX += (lambdaa[i] + lambdaJ)*spikyGradient[0]/rho_0
+            sumY += (lambdaa[i] + lambdaJ)*spikyGradient[1]/rho_0
+            sumZ += (lambdaa[i] + lambdaJ)*spikyGradient[2]/rho_0
     
+    return [sumX, sumY, sumZ]
           
 #Find neigboring particles within a radius rad
 
