@@ -193,16 +193,16 @@ for Particle in ListOfParticles:
     cmds.setKeyframe(".translateY", value=pos[1], time=frame)
     cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
 
-testing = [0]*numOfParticles  
-for j in range (0,KeyFrames):
-    frame += 1
+testing = [0]*numOfParticles
   
-    for i in range (1,numOfParticles):
+for j in range (0,KeyFrames):    
+    frame += 1
+    for i in range (0,numOfParticles):
          VelY[i]+= dt*9.82
-         PredictedPosition[i][1] += dt*VelY[i] 
-         
-    testing[i] = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
+         PredictedPosition[i][1] += dt*VelY[i]        
+         testing[i] = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
     print testing
+    
     Iter = 0
     while Iter < MaxSolverIterations : 
      
