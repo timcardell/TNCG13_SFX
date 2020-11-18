@@ -163,7 +163,7 @@ def addVect(Vec1, Vec2):
     tempVec = [Vec1[0]+Vec2[0],Vec1[1]+Vec2[1],Vec1[2]+Vec2[2]]
     return tempVec      
 
-
+# create lambda from equation ......
 
 def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSILON, h):
     rho_i = 0
@@ -189,7 +189,7 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSI
         
         sumGradient = scalarMult(sumGradient,(1/ZeroRho))
   
-        dotSum = VecMult(sumGradient,sumGradient)
+        dotSum = vecMult(sumGradient,sumGradient)
         
         
         C_i = (rho_i / ZeroRho)- 1
@@ -199,6 +199,17 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSI
     return Lambda
 
 
+# calculate delta position eq 12 in müller paper
+
+def deltaP(lambdaa, rho_0, numOfParticles, pos, h):
+    deltaPos = []
+    for i in range (1,numOfParticles):
+        for j in range (1,numOfParticles):
+            posi = pos[i]
+            posj = pos[j]
+            sum += (lambdaa[i] + lambdaa[j])* poly6Kernel(posi, posj, h)
+    
+          
 #Find neigboring particles within a radius rad
 
 def findNeighboringParticles(nrOfParticles, Pos, rad):
