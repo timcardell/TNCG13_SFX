@@ -126,10 +126,6 @@ def poly6Kernel(r, rj, h):
         return 0.0
 
 
-
-#res = poly6Kernel([3,2,2], [1,1,1], 2)
-#print str(res)
-
 def CalculateLambda(nrOfParticles, Pos, Neighbours, ZeroRho, EPSILON, h):
     
     Lambda = [0]* nrOfParticles
@@ -141,6 +137,24 @@ def CalculateLambda(nrOfParticles, Pos, Neighbours, ZeroRho, EPSILON, h):
            rho_i += poly6Kernel(Pos[i], rjPos, h)
         
     return Lambda
+
+
+def spikyGrad(ri, rj, h):
+    xVal = ri[0]-rj[0]
+    yVal = ri[1]-rj[1]
+    zVal = ri[2]-rj[2]
+    
+    
+    r = lengthVec(xVal, yVal, zVal)
+    
+    if r >= 0 or r <= h:
+        xGradient = 15/(3.14*(pow(h,2))*pow((h-r),2)*xVal/r)
+        yGradient = 15/(3.14*(pow(h,2))*pow((h-r),2)*yVal/r)
+        zGradient = 15/(3.14*(pow(h,2))*pow((h-r),2)*zVal/r)
+    gradVec= [xGradient, yGradient, zGradient]
+    
+    return gradVec
+    
 
 
 #Find neigboring particles within a radius rad
@@ -164,7 +178,15 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
     return neighborMatrix
 
 
+# calculate delta position eq 12 in müller paper
 
+#def deltaP(lambdaa, rho_0, numOfParticles, pos, h):
+    #deltaPos = []
+    #for i in range numOfParticles:
+        #for j in range numOfParticles:
+            #pos
+            #sum += (lambdaa[i] + lambdaa[j])* poly6Kernel(posi, posj, h)
+    
 
 
 #Simulation Loop
