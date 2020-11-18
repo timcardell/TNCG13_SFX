@@ -104,7 +104,7 @@ cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 15
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
 frame = startTime
-
+numOfParticles = count
 
 VelX = [0] * numOfParticles
 VelY = [0] * numOfParticles
