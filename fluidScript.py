@@ -14,7 +14,7 @@ if len(groundList) > 0:
 if len(boxList) > 0:
     cmds.delete(boxList)
 
-if len(ParticleList) > 0:
+if len(ListOfParticles) > 0:
     cmds.delete(ParticleList)
 
 
@@ -74,9 +74,9 @@ cmds.setAttr( "ground1_lambert.color"  ,1,1,1,type = 'double3')
 #Adding Spheres
 
 count = 0
-WidthParticles = 35
+WidthParticles = 3#35
 HeightParticles = 1
-LenghtParticles = 23
+LenghtParticles = 3#23
 
 for i in range( 0, WidthParticles ):
     for j in range( 0, HeightParticles ):
@@ -135,15 +135,16 @@ def poly6Kernel(r, rj, h):
 
 #Find neigboring particles within a radius rad
 
-def findNeighboringParticles(nrOfParticles, x, y, z, rad):
+def findNeighboringParticles(nrOfParticles, Pos, rad):
     neighborMatrix = []
-    neighborList = []
+    
     epsilon = 0.0000000001
     
     for i in range (1,nrOfParticles):
+        neighborList = []
         for j in range (1,nrOfParticles):
         
-            particleDistance = lengthVec(x[i]-x[j], y[i]-y[j], z[i]-z[j])
+            particleDistance = lengthVec(Pos[i][0]-Pos[j][0], Pos[i][1]-Pos[j][1], Pos[i][2]-Pos[j][2])
             #print 'dist:  ' + str(particleDistance)
             
             if particleDistance > epsilon and particleDistance < rad:
@@ -152,18 +153,13 @@ def findNeighboringParticles(nrOfParticles, x, y, z, rad):
         neighborMatrix.append(neighborList)
     return neighborMatrix
 
-xtest=[1,2,3,4,5]
-ytest =[2,3,4,5,11]
-ztest=[3,4,5,6,7]
-nrO = 5
 
-testing =findNeighboringParticles(nrO, xtest,ytest,ztest,2)
 
-print 'neighbortest:  ' + str(testing)
+
 
 #Simulation Loop
 
-KeyFrames = 200
+KeyFrames = 1
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
@@ -173,7 +169,7 @@ numOfParticles = count
 dt = 0.0016
 MaxSolverIterations = 40
 
-rad = 2
+rad = 0.3
 
 VelX = [0] * numOfParticles
 VelY = [0] * numOfParticles
@@ -196,15 +192,17 @@ for Particle in ListOfParticles:
     cmds.setKeyframe(".translateX", value=pos[0], time=frame)
     cmds.setKeyframe(".translateY", value=pos[1], time=frame)
     cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
- 
-for j in range (1,KeyFrames+1):
+
+testing = [0]*numOfParticles  
+for j in range (0,KeyFrames):
     frame += 1
   
     for i in range (1,numOfParticles):
          VelY[i]+= dt*9.82
          PredictedPosition[i][1] += dt*VelY[i] 
-         findNeighboringParticles(nrOfParticles,PredictedPosition[i], rad)
-    
+         
+    testing[i] = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
+    print testing
     Iter = 0
     while Iter < MaxSolverIterations : 
      
