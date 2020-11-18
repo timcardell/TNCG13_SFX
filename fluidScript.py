@@ -111,12 +111,8 @@ def poly6Kernel(r, rj, h):
         return 0.0
     
     
-    
-    
-
-res = poly6Kernel([3,2,2], [1,1,1], 2)
-
-print str(res)
+#res = poly6Kernel([3,2,2], [1,1,1], 2)
+#print str(res)
 
 
 
