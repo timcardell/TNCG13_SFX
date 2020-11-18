@@ -5,7 +5,7 @@ import sys
 
 groundList = cmds.ls('ground*')
 boxList = cmds.ls('box*')
-ParticleList = cmds.ls('particle*')
+ParticleList = cmds.ls('Particle*')
 if len(groundList) > 0:
     cmds.delete(groundList)
 
@@ -41,10 +41,7 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 # ground and simulation box
 ground = cmds.polyCube(w=10, h=1, d=10, name='ground#')
-ground1 = cmds.polyCube(w=1, h=6, d=10, name='ground#')
-ground2 = cmds.polyCube(w=10, h=6, d=1, name='ground#')
-cmds.move(5, 1, 0, ground1)
-cmds.move(0, 1, 5, ground2)
+
 
 cube = cmds.polyCube(w=6 , h=3, d=4, name='box#')
 
@@ -73,22 +70,73 @@ applyMaterial("ground1")
 cmds.setAttr( "ground1_lambert.color"  ,1,1,1,type = 'double3')
 
 #Adding Spheres
+
 count = 0
-for i in range( 0, 35 ):
-    for j in range( 0, 1 ):
-        for k in range( 0, 23 ):
+WidthParticles = 35
+HeightParticles = 1
+LenghtParticles = 23
+
+for i in range( 0, WidthParticles ):
+    for j in range( 0, HeightParticles ):
+        for k in range( 0, LenghtParticles ):
             count=count+1
-            result = cmds.polySphere( r=0.08, sx=1, sy=1, name='particle#' )
-            cmds.select('particle' + str(count)) 
-            cmds.move(2.57-i*0.17+0.35, 1+j*0.17, 2.23-k*0.17-0.35,'particle' + str(count))
+            result = cmds.polySphere( r=0.08, sx=1, sy=1, name='Particle#' )
+            cmds.select('Particle' + str(count)) 
+            cmds.move(2.57-i*0.17+0.35, 1+j*0.17, 2.23-k*0.17-0.35,'Particle' + str(count))
 
 cmds.setAttr( 'lambert1.transparency', 0.7,0.7,0.7, type = 'double3' )
-cmds.setAttr( 'lambert1.refractions', 1 )
 cmds.setAttr( 'lambert1.refractiveIndex', 1.333 )
+
 cmds.setAttr( 'lambert1.color', 0.56471 , 0.94118  ,0.86275, type = 'double3' )
 
-#Algorithm
+#Functions
 
+
+
+
+
+
+#Render Loop
+
+KeyFrames = 200
+cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
+startTime = cmds.playbackOptions( query = True, minTime = True )
+endTime = cmds.playbackOptions( query = True, maxTime = True )
+frame = startTime
+
+
+VelX = [0] * numOfParticles
+VelY = [0] * numOfParticles
+VelZ = [0] * numOfParticles
+
+PredictedPosX = [0] * numOfParticles
+PredictedPosY = [0] * numOfParticles
+PredictedPosZ = [0] * numOfParticles
+
+ListOfParticles = cmds.ls('Particle*',o=True, tr=True)
+size = 0
+for Particle in ListOfParticles:
+    cmds.select(Particle)
+    # only selecting the one sphere!
+    pos = [ cmds.getAttr(".translateX"),
+            cmds.getAttr(".translateY"),
+            cmds.getAttr(".translateZ") ]
+    
+    PredictedPosX[size] = pos[0]
+    PredictedPosY[size] = pos[1]
+    PredictedPosZ[size] = pos[2]
+     
+    size+=1
+         
+    cmds.setKeyframe(".translateX", value=pos[0], time=frame)
+    cmds.setKeyframe(".translateY", value=pos[1], time=frame)     
+    cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
+       
+for i in range (1,KeyFrames+1):
+    print 'Frame: ' + str(i)       
+
+
+    
 
 
 
