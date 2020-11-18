@@ -195,7 +195,6 @@ for j in range (1,KeyFrames+1):
         
        
     #findNeighboringParticles
-    
     Iter = 0
     while Iter < MaxSolverIterations : 
      
