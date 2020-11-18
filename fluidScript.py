@@ -133,15 +133,20 @@ def poly6Kernel(r, rj, h):
 
 #Find neigboring particles within a radius rad
 
-def findNeighboringParticles(rad, ListOfParticles):
+def findNeighboringParticles(nrOfParticles, x, y, z, rad):
+    neighborMatrix = []
     neighborList = []
-
-    for Particle in ListOfParticle:
-        cmds.select(Particle)
-
-
-
-
+    epsilon = 0.0000000001
+    
+    for i in range (1,nrOfpartcles):
+        for j in range (1,nrOfpartcles):
+        
+            particleDistance = length(x[i]-x[j], y[i]-y[j], z[i]-z[j])
+            
+            if particleDistance < epsilon and particleDistance > rad:
+                neighborList.append(j)
+        
+        neighbormatrix.append(neighborList)
 
 
 
