@@ -140,20 +140,28 @@ def findNeighboringParticles(nrOfParticles, x, y, z, rad):
     neighborList = []
     epsilon = 0.0000000001
     
-    for i in range (1,nrOfpartcles):
-        for j in range (1,nrOfpartcles):
+    for i in range (1,nrOfParticles):
+        for j in range (1,nrOfParticles):
         
-            particleDistance = length(x[i]-x[j], y[i]-y[j], z[i]-z[j])
+            particleDistance = lengthVec(x[i]-x[j], y[i]-y[j], z[i]-z[j])
+            #print 'dist:  ' + str(particleDistance)
             
-            if particleDistance < epsilon and particleDistance > rad:
+            if particleDistance > epsilon and particleDistance < rad:
                 neighborList.append(j)
         
-        neighbormatrix.append(neighborList)
+        neighborMatrix.append(neighborList)
+    return neighborMatrix
 
+xtest=[1,2,3,4,5]
+ytest =[2,3,4,5,11]
+ztest=[3,4,5,6,7]
+nrO = 5
 
+testing =findNeighboringParticles(nrO, xtest,ytest,ztest,2)
 
+print 'neighbortest:  ' + str(testing)
 
-#Render Loop
+#Simulation Loop
 
 KeyFrames = 200
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
