@@ -130,19 +130,29 @@ def poly6Kernel(r, rj, h):
 #res = poly6Kernel([3,2,2], [1,1,1], 2)
 #print str(res)
 
-
+def CalculateLambda(nrOfParticles, Pos, Neighbours, ZeroRho, EPSILON, h):
+    
+    Lambda = [0]* nrOfParticles
+    
+    for i in range (0, nrOfParticles):
+        
+        for j in range (1, len(Neighbours[i])):
+           rjPos = Pos[Neighbours[j]]
+           rho_i += poly6Kernel(Pos[i], rjPos, h)
+        
+    return Lambda
 
 
 #Find neigboring particles within a radius rad
 
 def findNeighboringParticles(nrOfParticles, Pos, rad):
     neighborMatrix = []
-    
+    neighborList = []
     epsilon = 0.0000000001
     
-    for i in range (1,nrOfParticles):
-        neighborList = []
-        for j in range (1,nrOfParticles):
+    for i in range (0,nrOfParticles):
+       
+        for j in range (0,nrOfParticles):
         
             particleDistance = lengthVec(Pos[i][0]-Pos[j][0], Pos[i][1]-Pos[j][1], Pos[i][2]-Pos[j][2])
             #print 'dist:  ' + str(particleDistance)
@@ -159,6 +169,12 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
 
 #Simulation Loop
 
+#Constants
+dt = 0.0016
+MaxSolverIterations = 40
+rad = 0.3
+ZeroRho = 1000
+
 KeyFrames = 1
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
@@ -166,18 +182,21 @@ endTime = cmds.playbackOptions( query = True, maxTime = True )
 frame = startTime
 numOfParticles = count
 
-dt = 0.0016
-MaxSolverIterations = 40
 
-rad = 0.3
+
+
+
 
 VelX = [0] * numOfParticles
 VelY = [0] * numOfParticles
 VelZ = [0] * numOfParticles
 
 PredictedPosition = [0]*numOfParticles
-
+Neighbours = [0]*numOfParticles
+Lambda = [0]*numOfParticles
 size = 0
+
+
 for Particle in ListOfParticles:
     cmds.select(Particle)
     # only selecting the one sphere!
@@ -193,19 +212,28 @@ for Particle in ListOfParticles:
     cmds.setKeyframe(".translateY", value=pos[1], time=frame)
     cmds.setKeyframe(".translateZ", value=pos[2], time=frame)
 
-testing = [0]*numOfParticles
+
   
 for j in range (0,KeyFrames):    
     frame += 1
+    #Predict position and velocities
     for i in range (0,numOfParticles):
          VelY[i]+= dt*9.82
-         PredictedPosition[i][1] += dt*VelY[i]        
-         testing[i] = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
-    print testing
-    
+         PredictedPosition[i][1] += dt*VelY[i]
+                 
+    #Find Neighboring particles     
+    for l in range (0,numOfParticles):
+          Neighbours[l] = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
+             
     Iter = 0
     while Iter < MaxSolverIterations : 
      
+        for i in range (0,numOfParticles):
+            Lambda[i] = CalculateLambda(numOfParticles, Pos, Neighbours, ZeroRho, EPSILON, h)
+            
+            
+        
+        
         
         Iter +=1
         
