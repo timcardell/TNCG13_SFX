@@ -391,7 +391,30 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
 
     return vorticityVec
 
+def applyXSPH(c, h, Pos, Vel, neighbours,numOfParticles):
+    vNew = []
+    sumJ = []
+    for i in range (0, numOfParticles):
+        posI = Pos[i]
+        velI = Vel[i]
+        for j in range (1, len(neighbours[i])):
+              cmds.select(ListOfParticles[Neighbours[i][j]])
+              posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
+              velJ = [Vel[Neighbours[i][j]][0],Vel[Neighbours[i][j]][1],Vel[Neighbours[i][j]][2]]
+              
+              W = poly6Kernel(posI,posJ, h)
+              vIJ = subVect(velI,velJ)
 
+              sumJ += scalarMult(vIJ,W)
+              sumJ = scalarMult(sumJ,c)
+              
+              vNew = addVect(velI,sumJ)
+              
+              
+
+    
+    return vNew
+    
 #Simulation Loop
 
 #Constants
@@ -400,7 +423,7 @@ MaxSolverIterations = 1
 rad = 0.3
 ZeroRho = 1000
 h = 1
-
+c = 0.01
 KeyFrames = 1
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
@@ -489,7 +512,7 @@ for j in range (0,KeyFrames):
              particleVelocity[i][2] = Constraints[1][i][2]
 
         Iter +=1
-        
+    #End while Loop    
     #print  particleVelocity       
         
     for n in range (0,numOfParticles):
@@ -497,10 +520,19 @@ for j in range (0,KeyFrames):
         pos = [cmds.getAttr(".translateX"), cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
         
         particleVelocity[n] = scalarMult(subVect(PredictedPosition[n], pos), (1/dt))
-        vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)           
-        print str(particleVelocity[n])
-       
         
+     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)           
+     XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
+       
+     for i in range (0, nrOfParticles) :
+         particleVelocity[i] = addVect(particleVelocity[i],scalarMult(fvorticity,dt)) 
+         
+     for i in range (0, nrOfParticles) :
+        cmds.select( 'Particle'+str(i) )
+        setNextKeyParticle( 'Particle'+str(i), frame, 'translateX', PredictedPosition[i][0])
+        setNextKeyParticle( 'Particle'+str(i), frame, 'translateY', PredictedPosition[i][1])
+        setNextKeyParticle( 'Particle'+str(i), frame, 'translateZ', PredictedPosition[i][2])
+
         
         
         
