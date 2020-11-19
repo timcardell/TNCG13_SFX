@@ -211,7 +211,7 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
     for i in range (0,numOfParticles):
         posi = pos[i]
         for j in range (0,len(neighbours[i])):
-            cmds.select(ListOfParticles[Neighbours[i][j]])
+            cmds.select(ListOfParticles[neighbours[i][j]])
             posj = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ") ]
             lambdaJ = lambdaa[neighbours[i][j]]
             
@@ -241,10 +241,33 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
         neighborMatrix.append(neighborList)
     return neighborMatrix
 
-
-
-
-
+# calclulate vorticiity confinement
+def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, numOfParticles):
+    
+    vorticityVec=[]
+    for i in range (1,numOfParticles):
+        #calculate position and velocity for all particles
+        posi =[predictedPosition[i][0], predictedPosition[i][1], predictedPosition[i][2]]
+        veli =[predictedVelocity[i][0], predictedVelocity[i][1], predictedVelocity[i][2]]
+        
+        for j in range (1, len(neighbours[i][j])):
+          #calculate velocity and position from i's neighbors 
+          velj = [predictedVelocity[neighbours[i][j]][0], predictedVelocity[neighbours[i][j]][1], predictedVelocity[neighbours[i][j]][2]]
+          posj = [predictedPosition[neighbours[i][j]][0], predictedPosition[neighbours[i][j]][1], predictedPosition[neighbours[i][j]][2]]
+          
+          #calculate vij from eq 15 in müller 
+          vij = [velj[0]-veli[0], velj[1]-veli[1], velj[2]-veli[2]]
+          
+          #spiky gradient, inserted in eq 15
+          grad = spikyGrad(posi, posj, h)
+          
+          #cross poduct of gradient and vij
+          crossProduct = [(vij[2]*grad[3])-vij[3]*grad[2], -(vij[1]*grad[3])-vij[3]*grad[1], (vij[1]*grad[2])-vij[2]*grad[1]]
+    
+    vorticityVec.append(crossProduct)
+    
+    return vorticityVec
+    
 #Simulation Loop
 
 #Constants
