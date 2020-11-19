@@ -74,9 +74,9 @@ cmds.setAttr( "ground1_lambert.color"  ,1,1,1,type = 'double3')
 #Adding Spheres
 
 count = 0
-WidthParticles = 3#35
+WidthParticles = 35#35
 HeightParticles = 1
-LenghtParticles = 3#23
+LenghtParticles = 23#23
 particleRadius = 0.08
 for i in range( 0, WidthParticles ):
     for j in range( 0, HeightParticles ):
@@ -254,7 +254,7 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
 def findNeighboringParticles(nrOfParticles, Pos, rad):
     neighborMatrix = []
     
-    epsilon = 0.0000000001
+    epsilon = 0.001
 
     for i in range (0,nrOfParticles):
         neighborList = []
@@ -268,7 +268,7 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
                 
 
         neighborMatrix.append(neighborList)
-        
+        print neighborMatrix
     return neighborMatrix
 
 
@@ -365,12 +365,13 @@ def calcVelocity(posI,posJ,velI,velJ):
 def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, numOfParticles):
 
     vorticityVec=[]
-    for i in range (1,numOfParticles):
+    
+    for i in range (0,numOfParticles):
         #calculate position and velocity for all particles
         posi = predictedPosition[i]
         veli = predictedVelocity[i]
         
-        for j in range (1, len(neighbours[i])):
+        for j in range (0, len(neighbours[i])):
           #calculate velocity and position from i's neighbors
           velj = [predictedVelocity[neighbours[i][j]][0], predictedVelocity[neighbours[i][j]][1], predictedVelocity[neighbours[i][j]][2]]
           cmds.select(ListOfParticles[Neighbours[i][j]])
@@ -386,8 +387,8 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
 
           #cross poduct of gradient and vij
           crossProduct = [(vij[1]*grad[2])-vij[2]*grad[1], -(vij[0]*grad[2])-vij[2]*grad[0], (vij[0]*grad[1])-vij[1]*grad[0]]
-          
-    vorticityVec.append(crossProduct)
+          vorticityVec.append(crossProduct)
+    #vorticityVec = crossProduct
 
     return vorticityVec
 
@@ -424,14 +425,18 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
         posi = particlePosition[i]
         
         for j in range (0, len(Neighbours[i])):
+        
           vort = vorticity[Neighbours[i][j]]
-          vortLen = lengthVec(vort)
+          
+          vortLen = lengthVec(vort[0],vort[1],vort[2])
           cmds.select(ListOfParticles[Neighbours[i][j]])
           posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
-          grad = spikyGradient(pos, posj, h)
-          n = grad*vortLen
-          nNormFactor = lengtVec(n)
-          N = n/nNormFactor
+          grad = spikyGrad(posi, posJ, h)
+          
+          n = scalarMult(grad,vortLen)
+          nNormFactor = lengthVec(n[0],n[1],n[2])
+          print nNormFactor
+          N = scalarMult(n,(1/nNormFactor))
           
           crossProduct =  crossProduct = [(N[1]*vort[2])-N[2]*vort[1], -(N[0]*vort[2])-N[2]*vort[0], (N[0]*vort[1])-N[1]*vort[0]]
           fVorticity.append(crossProduct)
@@ -538,7 +543,7 @@ for j in range (0,KeyFrames):
         Iter +=1
     #End while Loop    
     #print  particleVelocity       
-    epsilon = 1 
+    epsilon = 200 
     for n in range (0,numOfParticles):
         cmds.select(ListOfParticles[n])
         pos = [cmds.getAttr(".translateX"), cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
@@ -548,15 +553,16 @@ for j in range (0,KeyFrames):
     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
     fVorticity = fVorticity(vort, PredictedPosition, epsilon, h,Neighbours)
     XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
-       
-    for i in range (0, nrOfParticles) :
-         particleVelocity[i] = addVect(particleVelocity[i],scalarMult(fVorticity,dt)) 
+
+    for i in range (0, numOfParticles) :
+         particleVelocity[i] = addVect(XSPH,addVect(particleVelocity[i],scalarMult(fVorticity[i],dt)))
          
-    for i in range (0, nrOfParticles) :
+    for i in range (1, numOfParticles) :
         cmds.select( 'Particle'+str(i) )
-        setNextKeyParticle( 'Particle'+str(i), frame, 'translateX', PredictedPosition[i][0])
-        setNextKeyParticle( 'Particle'+str(i), frame, 'translateY', PredictedPosition[i][1])
-        setNextKeyParticle( 'Particle'+str(i), frame, 'translateZ', PredictedPosition[i][2])
+        cmds.setKeyframe(".translateX", value=PredictedPosition[i][0], time=frame)
+        cmds.setKeyframe(".translateY", value=PredictedPosition[i][1], time=frame)
+        cmds.setKeyframe(".translateZ", value=PredictedPosition[i][2], time=frame)
+
 
         
         
