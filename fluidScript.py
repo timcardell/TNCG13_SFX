@@ -74,9 +74,9 @@ cmds.setAttr( "ground1_lambert.color"  ,1,1,1,type = 'double3')
 #Adding Spheres
 
 count = 0
-WidthParticles = 35#35
+WidthParticles = 10#35
 HeightParticles = 1
-LenghtParticles = 23#23
+LenghtParticles = 10#23
 particleRadius = 0.08
 for i in range( 0, WidthParticles ):
     for j in range( 0, HeightParticles ):
@@ -226,7 +226,7 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSI
     return Lambda
 
 
-#calculate delta position eq 12 in müller paper
+#calculate delta position eq 12 in mï¿½ller paper
 
 def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
     deltaPos = []
@@ -265,10 +265,10 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
             if particleDistance > epsilon and particleDistance < rad:
                 neighborList.append(j)
                 
-                
-
+            
+            #print str(neighborList)
         neighborMatrix.append(neighborList)
-        print neighborMatrix
+        #print neighborMatrix
     return neighborMatrix
 
 
@@ -377,7 +377,7 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
           cmds.select(ListOfParticles[Neighbours[i][j]])
           posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
 
-          #calculate vij from eq 15 in müller
+          #calculate vij from eq 15 in mï¿½ller
           
           vij = [velj[0]-veli[0], velj[1]-veli[1], velj[2]-veli[2]]
           
@@ -435,7 +435,9 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
           
           n = scalarMult(grad,vortLen)
           nNormFactor = lengthVec(n[0],n[1],n[2])
-          print nNormFactor
+          #print nNormFactor
+          if nNormFactor < 0.00000001:
+              nNormFactor = 0.000001
           N = scalarMult(n,(1/nNormFactor))
           
           crossProduct =  crossProduct = [(N[1]*vort[2])-N[2]*vort[1], -(N[0]*vort[2])-N[2]*vort[0], (N[0]*vort[1])-N[1]*vort[0]]
@@ -453,7 +455,7 @@ rad = 0.3
 ZeroRho = 1000
 h = 1
 c = 0.01
-KeyFrames = 1
+KeyFrames = 10
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
@@ -489,8 +491,8 @@ for j in range (0,KeyFrames):
     frame += 1
     #Predict position and velocities
     for i in range (0,numOfParticles):
-         
-         particleVelocity[i][2]+= dt*9.82
+         #print 'vel:  '+str(particleVelocity)
+         particleVelocity[i][1]+= -dt*9.82
          PredictedPosition[i][1] += dt*particleVelocity[i][1]
 
          #Create Bounding box and bounding conditions
@@ -551,11 +553,11 @@ for j in range (0,KeyFrames):
         particleVelocity[n] = scalarMult(subVect(PredictedPosition[n], pos), (1/dt))
         
     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
-    fVorticity = fVorticity(vort, PredictedPosition, epsilon, h,Neighbours)
+    f_Vorticity = fVorticity(vort, PredictedPosition, epsilon, h,Neighbours)
     XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
 
     for i in range (0, numOfParticles) :
-         particleVelocity[i] = addVect(XSPH,addVect(particleVelocity[i],scalarMult(fVorticity[i],dt)))
+         particleVelocity[i] = addVect(XSPH,addVect(particleVelocity[i],scalarMult(f_Vorticity[i],dt)))
          
     for i in range (1, numOfParticles) :
         cmds.select( 'Particle'+str(i) )
