@@ -141,9 +141,9 @@ def spikyGrad(ri, rj, h):
 
     r = lengthVec(xVal, yVal, zVal)
     gradConstant = 15/(3.14*(math.pow(h,2))*math.pow((h-r),2))
-    print r
+    #print r
     if r >= 0 or r <= h:
-
+    
         xGradient = gradConstant*(xVal/r)
         yGradient = gradConstant*(yVal/r)
         zGradient = gradConstant*(zVal/r)
@@ -201,8 +201,9 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSI
         for j in range (0, len(Neighbours[i])):
            cmds.select(ListOfParticles[Neighbours[i][j]])
            rjPos = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ") ]
-           print Pos
-           print rjPos
+           #print 'pos' +str(Pos)
+           #print 'posj' + str(rjPos)
+           
            rho_i += poly6Kernel(Pos, rjPos, h)
            
            gradientPk = spikyGrad(Pos, rjPos, h)
@@ -252,19 +253,22 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
 
 def findNeighboringParticles(nrOfParticles, Pos, rad):
     neighborMatrix = []
-    neighborList = []
+    
     epsilon = 0.0000000001
 
     for i in range (0,nrOfParticles):
-
+        neighborList = []
         for j in range (0,nrOfParticles):
             particleDistance = lengthVec(Pos[i][0]-Pos[j][0], Pos[i][1]-Pos[j][1], Pos[i][2]-Pos[j][2])
             #print 'dist:  ' + str(particleDistance)
 
             if particleDistance > epsilon and particleDistance < rad:
                 neighborList.append(j)
+                
+                
 
         neighborMatrix.append(neighborList)
+        
     return neighborMatrix
 
 
@@ -364,7 +368,7 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
     for i in range (1,numOfParticles):
         #calculate position and velocity for all particles
         posi = predictedPosition[i]
-        veli =[predictedVelocity[i][0], predictedVelocity[i][1], predictedVelocity[i][2]]
+        veli = predictedVelocity[i]
         
         for j in range (1, len(neighbours[i])):
           #calculate velocity and position from i's neighbors
@@ -373,14 +377,16 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
           posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
 
           #calculate vij from eq 15 in müller
+          
           vij = [velj[0]-veli[0], velj[1]-veli[1], velj[2]-veli[2]]
-
+          
+          #print 'velj'+str(veli)
           #spiky gradient, inserted in eq 15
           grad = spikyGrad(posi, posJ, h)
 
           #cross poduct of gradient and vij
-          crossProduct = [(vij[2]*grad[3])-vij[3]*grad[2], -(vij[1]*grad[3])-vij[3]*grad[1], (vij[1]*grad[2])-vij[2]*grad[1]]
-
+          crossProduct = [(vij[1]*grad[2])-vij[2]*grad[1], -(vij[0]*grad[2])-vij[2]*grad[0], (vij[0]*grad[1])-vij[1]*grad[0]]
+          
     vorticityVec.append(crossProduct)
 
     return vorticityVec
@@ -484,11 +490,16 @@ for j in range (0,KeyFrames):
 
         Iter +=1
         
-    print  particleVelocity       
+    #print  particleVelocity       
         
+    for n in range (0,numOfParticles):
+        cmds.select(ListOfParticles[n])
+        pos = [cmds.getAttr(".translateX"), cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
         
-        
-        
+        particleVelocity[n] = scalarMult(subVect(PredictedPosition[n], pos), (1/dt))
+        vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)           
+        print str(vort)
+       
         
         
         
