@@ -141,7 +141,7 @@ def spikyGrad(ri, rj, h):
 
     r = lengthVec(xVal, yVal, zVal)
     gradConstant = 15/(3.14*(math.pow(h,2))*math.pow((h-r),2))
-
+    print r
     if r >= 0 or r <= h:
 
         xGradient = gradConstant*(xVal/r)
@@ -201,9 +201,10 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSI
         for j in range (0, len(Neighbours[i])):
            cmds.select(ListOfParticles[Neighbours[i][j]])
            rjPos = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ") ]
-
+           print Pos
+           print rjPos
            rho_i += poly6Kernel(Pos, rjPos, h)
-
+           
            gradientPk = spikyGrad(Pos, rjPos, h)
 
            kernel =  poly6Kernel(Pos, rjPos, h)
@@ -237,8 +238,9 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
             cmds.select(ListOfParticles[neighbours[i][j]])
             posj = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ") ]
             lambdaJ = lambdaa[neighbours[i][j]]
-
+            
             spikyGradient = spikyGrad(posi, posj, h)
+            
             sumX += (lambdaa[i] + lambdaJ)*spikyGradient[0]/rho_0
             sumY += (lambdaa[i] + lambdaJ)*spikyGradient[1]/rho_0
             sumZ += (lambdaa[i] + lambdaJ)*spikyGradient[2]/rho_0
@@ -361,19 +363,20 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
     vorticityVec=[]
     for i in range (1,numOfParticles):
         #calculate position and velocity for all particles
-        posi =[predictedPosition[i][0], predictedPosition[i][1], predictedPosition[i][2]]
+        posi = predictedPosition[i]
         veli =[predictedVelocity[i][0], predictedVelocity[i][1], predictedVelocity[i][2]]
-
+        
         for j in range (1, len(neighbours[i])):
           #calculate velocity and position from i's neighbors
           velj = [predictedVelocity[neighbours[i][j]][0], predictedVelocity[neighbours[i][j]][1], predictedVelocity[neighbours[i][j]][2]]
-          posj = [predictedPosition[neighbours[i][j]][0], predictedPosition[neighbours[i][j]][1], predictedPosition[neighbours[i][j]][2]]
+          cmds.select(ListOfParticles[Neighbours[i][j]])
+          posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
 
           #calculate vij from eq 15 in müller
           vij = [velj[0]-veli[0], velj[1]-veli[1], velj[2]-veli[2]]
 
           #spiky gradient, inserted in eq 15
-          grad = spikyGrad(posi, posj, h)
+          grad = spikyGrad(posi, posJ, h)
 
           #cross poduct of gradient and vij
           crossProduct = [(vij[2]*grad[3])-vij[3]*grad[2], -(vij[1]*grad[3])-vij[3]*grad[1], (vij[1]*grad[2])-vij[2]*grad[1]]
@@ -428,8 +431,9 @@ for j in range (0,KeyFrames):
     frame += 1
     #Predict position and velocities
     for i in range (0,numOfParticles):
+         
          particleVelocity[i][2]+= dt*9.82
-         PredictedPosition[i][1] += dt*VelY[i]
+         PredictedPosition[i][1] += dt*particleVelocity[i][1]
 
          #Create Bounding box and bounding conditions
     Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles)
@@ -442,8 +446,8 @@ for j in range (0,KeyFrames):
          particleVelocity[i][2] = Constraints[1][i][2]
 
     #Find Neighboring particles
-    for l in range (0,numOfParticles):
-          Neighbours = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
+    
+    Neighbours = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
 
     Iter = 0
     while Iter < MaxSolverIterations :
@@ -453,9 +457,9 @@ for j in range (0,KeyFrames):
         deltaPositions = deltaP(Lambda, ZeroRho, numOfParticles, PredictedPosition, h,Neighbours)
 
         for i in range (0 , numOfParticles):
-            PredictedPosition[i][0]+=deltaPos[i][0]
-            PredictedPosition[i][1]+=deltaPos[i][1]
-            PredictedPosition[i][2]+=deltaPos[i][2]
+            PredictedPosition[i][0]+=deltaPositions[i][0]
+            PredictedPosition[i][1]+=deltaPositions[i][1]
+            PredictedPosition[i][2]+=deltaPositions[i][2]
 
 
         particleCollision = calculateParticleCollisionResponse(PredictedPosition, particleVelocity, particleRadius, Neighbours,numOfParticles)
@@ -480,7 +484,7 @@ for j in range (0,KeyFrames):
 
         Iter +=1
         
-    print  PredictedPosition       
+    print  particleVelocity       
         
         
         
