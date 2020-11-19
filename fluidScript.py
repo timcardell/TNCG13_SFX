@@ -436,7 +436,7 @@ def fVorticity(vorticity, particlePosition, epsilon, h):
           crossProduct =  crossProduct = [(N[1]*vort[2])-N[2]*vort[1], -(N[0]*vort[2])-N[2]*vort[0], (N[0]*vort[1])-N[1]*vort[0]]
           fVorticity.append(crossProduct)
         
-        return fVorticity
+    return fVorticity
 
 
 #Simulation Loop
@@ -538,7 +538,7 @@ for j in range (0,KeyFrames):
         Iter +=1
     #End while Loop    
     #print  particleVelocity       
-        
+    epsilon = 1 
     for n in range (0,numOfParticles):
         cmds.select(ListOfParticles[n])
         pos = [cmds.getAttr(".translateX"), cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
@@ -546,11 +546,11 @@ for j in range (0,KeyFrames):
         particleVelocity[n] = scalarMult(subVect(PredictedPosition[n], pos), (1/dt))
         
      vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
-               
+     fVorticity = fVorticity(vort, PredictedPosition, epsilon, h)
      XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
        
      for i in range (0, nrOfParticles) :
-         particleVelocity[i] = addVect(particleVelocity[i],scalarMult(fvorticity,dt)) 
+         particleVelocity[i] = addVect(particleVelocity[i],scalarMult(fVorticity,dt)) 
          
      for i in range (0, nrOfParticles) :
         cmds.select( 'Particle'+str(i) )
