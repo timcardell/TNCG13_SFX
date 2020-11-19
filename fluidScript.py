@@ -138,9 +138,10 @@ def spikyGrad(ri, rj, h):
     
     
     r = lengthVec(xVal, yVal, zVal)
-    
     gradConstant = 15/(3.14*(math.pow(h,2))*math.pow((h-r),2))
+    
     if r >= 0 or r <= h:
+        
         xGradient = gradConstant*(xVal/r)
         yGradient = gradConstant*(yVal/r)
         zGradient = gradConstant*(zVal/r)
@@ -200,9 +201,9 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSI
     return Lambda
 
 
-# calculate delta position eq 12 in müller paper
+#calculate delta position eq 12 in müller paper
 
-def deltaP(lambdaa, rho_0, numOfParticles, pos, h,neighbours):
+def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
     deltaPos = []
     sumX = 0
     sumY = 0
@@ -210,7 +211,8 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h,neighbours):
     for i in range (0,numOfParticles):
         posi = pos[i]
         for j in range (0,len(neighbours[i])):
-            posj = pos[neighbours[i][j]]
+            cmds.select(ListOfParticles[Neighbours[i][j]])
+            posj = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ") ]
             lambdaJ = lambdaa[neighbours[i][j]]
             
             spikyGradient = spikyGrad(posi, posj, h)
@@ -303,9 +305,6 @@ for j in range (0,KeyFrames):
    
         Lambda = CalculateLambda(numOfParticles, PredictedPosition, Neighbours, ZeroRho, 0.001, h)
             
-            
-      
-        
         correctedPos = deltaP(Lambda, ZeroRho, numOfParticles, PredictedPosition, h,Neighbours)
         
         print correctedPos
