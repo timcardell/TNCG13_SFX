@@ -498,7 +498,7 @@ for j in range (0,KeyFrames):
         
         particleVelocity[n] = scalarMult(subVect(PredictedPosition[n], pos), (1/dt))
         vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)           
-        print str(vort)
+        print str(particleVelocity[n])
        
         
         
