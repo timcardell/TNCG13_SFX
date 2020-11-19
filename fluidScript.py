@@ -434,9 +434,9 @@ def fVorticity(vorticity, particlePosition, epsilon, h):
           N = n/nNormFactor
           
           crossProduct =  crossProduct = [(N[1]*vort[2])-N[2]*vort[1], -(N[0]*vort[2])-N[2]*vort[0], (N[0]*vort[1])-N[1]*vort[0]]
-        fVorticity.append(crossProduct)
+          fVorticity.append(crossProduct)
         
-    return fVorticity
+        return fVorticity
 
 
 #Simulation Loop
