@@ -226,7 +226,7 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSI
     return Lambda
 
 
-#calculate delta position eq 12 in mÃ¼ller paper
+#calculate delta position eq 12 in müller paper
 
 def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
     deltaPos = []
@@ -376,7 +376,7 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
           cmds.select(ListOfParticles[Neighbours[i][j]])
           posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
 
-          #calculate vij from eq 15 in mÃ¼ller
+          #calculate vij from eq 15 in müller
           
           vij = [velj[0]-veli[0], velj[1]-veli[1], velj[2]-veli[2]]
           
@@ -417,14 +417,14 @@ def applyXSPH(c, h, Pos, Vel, neighbours,numOfParticles):
     
 
 #compute corrective force eq 16
-def fVorticity(vorticity, particlePosition, epsilon, h):
+def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
     fVorticity = []
     
-    for i in range (1,numOfParticles):
-        posi = predictedPosition[i]
+    for i in range (0,numOfParticles):
+        posi = particlePosition[i]
         
-        for j in range (1, len(neighbours[i])):
-          vort = vorticity[neighbours[i][j]]
+        for j in range (0, len(Neighbours[i])):
+          vort = vorticity[Neighbours[i][j]]
           vortLen = lengthVec(vort)
           cmds.select(ListOfParticles[Neighbours[i][j]])
           posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
@@ -545,14 +545,14 @@ for j in range (0,KeyFrames):
         
         particleVelocity[n] = scalarMult(subVect(PredictedPosition[n], pos), (1/dt))
         
-     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
-     fVorticity = fVorticity(vort, PredictedPosition, epsilon, h)
-     XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
+    vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
+    fVorticity = fVorticity(vort, PredictedPosition, epsilon, h,Neighbours)
+    XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
        
-     for i in range (0, nrOfParticles) :
+    for i in range (0, nrOfParticles) :
          particleVelocity[i] = addVect(particleVelocity[i],scalarMult(fVorticity,dt)) 
          
-     for i in range (0, nrOfParticles) :
+    for i in range (0, nrOfParticles) :
         cmds.select( 'Particle'+str(i) )
         setNextKeyParticle( 'Particle'+str(i), frame, 'translateX', PredictedPosition[i][0])
         setNextKeyParticle( 'Particle'+str(i), frame, 'translateY', PredictedPosition[i][1])
