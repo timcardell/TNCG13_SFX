@@ -415,6 +415,30 @@ def applyXSPH(c, h, Pos, Vel, neighbours,numOfParticles):
     
     return vNew
     
+
+#compute corrective force eq 16
+def fVorticity(vorticity, particlePosition, epsilon, h):
+    fVorticity = []
+    
+    for i in range (1,numOfParticles):
+        posi = predictedPosition[i]
+        
+        for j in range (1, len(neighbours[i])):
+          vort = vorticity[neighbours[i][j]]
+          vortLen = lengthVec(vort)
+          cmds.select(ListOfParticles[Neighbours[i][j]])
+          posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
+          grad = spikyGradient(pos, posj, h)
+          n = grad*vortLen
+          nNormFactor = lengtVec(n)
+          N = n/nNormFactor
+          
+          crossProduct =  crossProduct = [(N[1]*vort[2])-N[2]*vort[1], -(N[0]*vort[2])-N[2]*vort[0], (N[0]*vort[1])-N[1]*vort[0]]
+        fVorticity.append(crossProduct)
+        
+    return fVorticity
+
+
 #Simulation Loop
 
 #Constants
