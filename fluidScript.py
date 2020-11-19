@@ -521,7 +521,8 @@ for j in range (0,KeyFrames):
         
         particleVelocity[n] = scalarMult(subVect(PredictedPosition[n], pos), (1/dt))
         
-     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)           
+     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
+               
      XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
        
      for i in range (0, nrOfParticles) :
