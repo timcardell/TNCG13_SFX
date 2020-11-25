@@ -77,18 +77,17 @@ correctionK = 0.001
 correctionN = 4.0
 correctionDeltaQ = 0.3
 count = 0
-WidthParticles = 5#35
-HeightParticles = 5
-LenghtParticles = 5#23
+WidthParticles = 6#35
+HeightParticles = 3
+LenghtParticles = 6#23
 particleRadius = 0.08
 for i in range( 0, WidthParticles ):
-    for j in range( 0, HeightParticles ):
-        for k in range( 0, LenghtParticles ): 
+    for k in range( 0, HeightParticles ):
+        for j in range( 0, LenghtParticles ): 
             count=count+1
             result = cmds.polySphere( r=particleRadius, sx=1, sy=1, name='Particle#' )
-            cmds.select('Particle' + str(count))
-           
-            cmds.move(2.57-i*0.17+0.35, 1+j*0.17, 2.23-k*0.17-0.35,'Particle' + str(count))
+            cmds.select('Particle' + str(count)) 
+            cmds.move(-i*0.16, 3+j*0.16, k*0.16,'Particle' + str(count))
             
 
 cmds.setAttr( 'lambert1.transparency', 0.7,0.7,0.7, type = 'double3' )
@@ -113,7 +112,6 @@ def lengthVec(x, y, z):
     return math.sqrt(math.pow(x,2) + math.pow(y,2) + math.pow(z,2))
 
 
-
 def poly6Kernel(r, rj, h):
     # create resulting vector
     subtractedVec = []
@@ -133,11 +131,6 @@ def poly6Kernel(r, rj, h):
         return 0.0
         
 def poly6KernelAlternative(dQ, h):
-    # create resulting vector
-
-
-    #length = lengthVec(dQ[0], dQ[1], dQ[2])
-    #poly6kernel
     resPoly6Kernel = 315/(64*3.14*math.pow(h,9))*math.pow((math.pow(h,2)-math.pow(dQ,2)),3)
 
     if dQ >= 0 or dQ <= h:
@@ -203,10 +196,6 @@ def projectVect(Vec1, Vec2) :
     scalarMult(tempVec, 1.0/c_2)
 
     return tempVec
-
-
-
-
 
 # create lambda from equation ......
 
@@ -297,18 +286,16 @@ def computeCorrectionScore(k, h, n, dQ, p1, p2) :
     return -k * math.pow(constraint, n)
 
 
-def findNeighboringParticles(nrOfParticles, Pos, rad):
+def findNeighboringParticles(nrOfParticles, Pos, rad,epsilon):
     neighborMatrix = []
-    
-    epsilon = 0.001
-
+    epsilon= 0.08
     for i in range (1,nrOfParticles):
         neighborList = []
         for j in range (1,nrOfParticles):
             particleDistance = lengthVec(Pos[i][0]-Pos[j][0], Pos[i][1]-Pos[j][1], Pos[i][2]-Pos[j][2])
            # print 'dist:  ' + str(particleDistance)
 
-            if particleDistance > epsilon and particleDistance < rad:
+            if particleDistance < rad:
                 neighborList.append(j)
                 
             
@@ -324,7 +311,7 @@ def BoxConstraints(Pos,Vel,Rad,numOfParticles):
 
     xMin = -5+ Rad
     xMax = 5 - Rad
-    yMin = 0.5
+    yMin = 0.9
     yMax = 5
     zMin = -5 + Rad
     zMax = 5 - Rad
@@ -356,59 +343,56 @@ def BoxConstraints(Pos,Vel,Rad,numOfParticles):
 
 
 def calculateParticleCollisionResponse(Pos, Vel, Rad, Neighbours,numOfParticles):
-    
-    for i in range (1, numOfParticles):
-        posI = Pos[i]
-        for j in range (1, len(Neighbours[i])):
-           cmds.select(ListOfParticles[Neighbours[i][j]])
-           posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
-           #print posI
-           
-           particleDistance = subVect(posI,posJ)
-           particleDistance = lengthVec(particleDistance[0],particleDistance[1],particleDistance[2])
+    offset = 0.01
 
-           if particleDistance > 0 and particleDistance <= 2.0 * Rad :
-               velI = Vel[i]
-               velJ = [Vel[Neighbours[i][j]][0],Vel[Neighbours[i][j]][1],Vel[Neighbours[i][j]][2]]
+    for i in range (1, numOfParticles) :
+        pos_i = Pos[i]
+        for j in range (1, len(Neighbours[i])) :
+            pos_j = [Pos[Neighbours[i][j]][0], Pos[Neighbours[i][j]][0], Pos[Neighbours[i][j]][0]]
+            distance =vecMult(subVect(pos_i,pos_j),subVect(pos_i,pos_j))
+            #print str(distance) + '<' + str(2 * Rad)
+            if distance <= (2 * Rad) and distance > 0.0 : # COLLISION!
+            
+                v_i = [Vel[i][0], Vel[i][1], Vel[i][2]]
+                v_j = [ Pos[Neighbours[i][j]][0],  Pos[Neighbours[i][j]][1],  Pos[Neighbours[i][j]][2]]
 
-               dBetweenParticles = subVect(posI,posJ)
-               
-               collisionPoint = addVect(posI, dBetweenParticles)
+                vecBetweenParticles = [pos_j[0] - pos_i[0], pos_j[1] - pos_i[1], pos_j[2] - pos_i[2]]
+                collisionPoint = addVect(pos_i, vecBetweenParticles)
 
-               d = lengthVec(dBetweenParticles[0],dBetweenParticles[1],dBetweenParticles[2])
+                vecBetweenParticles = norm(vecBetweenParticles)
 
-               dBetweenParticles = norm(dBetweenParticles)
+                negVec = scalarMult(scalarMult(vecBetweenParticles, -1.0), offset)
+                Pos[i][0] = Pos[i][0] + negVec[0]
+                Pos[i][1] = Pos[i][1] + negVec[1]
+                Pos[i][2] = Pos[i][2] + negVec[2]
+                
+                Pos[Neighbours[i][j]][0] = Pos[Neighbours[i][j]][0] + offset * vecBetweenParticles[0]
+                Pos[Neighbours[i][j]][1] = Pos[Neighbours[i][j]][1] + offset * vecBetweenParticles[1]
+                Pos[Neighbours[i][j]][2] = Pos[Neighbours[i][j]][2] + offset * vecBetweenParticles[2]
 
-               negativeVec = scalarMult(scalarMult(dBetweenParticles,-1),0.1)
-             
-               Pos[i] = addVect(Pos[i],negativeVec)
+                newVels = calcVelocity(pos_i, pos_j, v_i, v_j)
+                Pos[i][0] = newVels[0][0]
+                Pos[i][1] = newVels[0][1]
+                Pos[i][2] = newVels[0][2]
+                
+                Vel[Neighbours[i][j]][0] = newVels[1][0]
+                Vel[Neighbours[i][j]][1] = newVels[1][1]
+                Vel[Neighbours[i][j]][2] = newVels[1][2]
+                
 
-               
-               Pos[Neighbours[i][j]] = addVect(Pos[Neighbours[i][j]],scalarMult(dBetweenParticles,0.1))
-
-               newVels = calcVelocity(posI,posJ, velI, velJ)
-
-               Vel[i][0] = newVels[0][0]
-               Vel[i][1] = newVels[0][1]
-               Vel[i][2] = newVels[0][2]
-
-               Vel[Neighbours[i][j]][0] = newVels[1][0]
-               Vel[Neighbours[i][j]][1] = newVels[1][1]
-               Vel[Neighbours[i][j]][2] = newVels[1][2]
-
-  
     return [Pos, Vel]
 
 def calcVelocity(posI,posJ,velI,velJ):
     NewPosIJ = subVect(posI, posJ)
     NewPosJI = subVect(posJ, posI)
 
-    newVel1 =  projectVect(velJ,NewPosJI)
-    newVel2 =  projectVect(velI,NewPosIJ)
+    newVel1 =  projectVect(velI,NewPosJI)
+    newVel2 =  projectVect(velJ,NewPosIJ)
 
     newVel1 = subVect(newVel1, projectVect(velI, NewPosIJ))
     newVel2 = subVect(newVel2, projectVect(velJ, NewPosJI))
-
+    newVel1 = scalarMult(newVel1,0.25)
+    newVel2 = scalarMult(newVel2,0.25)
     return [newVel1, newVel2]
 
 # calclulate vorticiity confinement
@@ -472,24 +456,31 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
     
     for i in range (1,numOfParticles):
         posi = particlePosition[i]
+        res = [0,0,0]
         
         for j in range (1, len(Neighbours[i])):
         
           vort = vorticity[Neighbours[i][j]]
-          
-          vortLen = lengthVec(vort[0],vort[1],vort[2])
+          vortLen = getLengthOfVec(vort)
           cmds.select(ListOfParticles[Neighbours[i][j]])
           posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
           grad = spikyGrad(posi, posJ, h)
           
           n = scalarMult(grad,vortLen)
-          nNormFactor = lengthVec(n[0],n[1],n[2])
-          #print nNormFactor
-          if nNormFactor < 0.00000001:
-              nNormFactor = 0.000001
-          N = scalarMult(n,(1/nNormFactor))
+         
+          res = addVect(res,n)
+          resLength = getLengthOfVec(res)
           
-          crossProduct = [(N[1]*vort[2])-N[2]*vort[1], -(N[0]*vort[2])-N[2]*vort[0], (N[0]*vort[1])-N[1]*vort[0]]
+          
+          #print nNormFactor
+          if resLength < 0.000001:
+             fVorticity.append([0,0,0])
+             continue
+             
+          res = norm(res)
+          
+          crossProduct = [(res[1]*vort[2])-res[2]*vort[1], -(res[0]*vort[2])-res[2]*vort[0], (res[0]*vort[1])-res[1]*vort[0]]
+          crossProduct = scalarMult(crossProduct,0.25)
           fVorticity.append(crossProduct)
     fVorticity.insert(0,[])
     return fVorticity
@@ -501,11 +492,11 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
 dt = 0.0016
 MaxSolverIterations = 3
 rad = 0.3
-ZeroRho = 200
+ZeroRho = 4000
 h = 0.4
 c = 0.001
 EPSILON = 200
-KeyFrames = 50
+KeyFrames = 20
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
@@ -564,63 +555,64 @@ for i in range ( 1, numOfParticles ):
 for j in range (1,KeyFrames):
     print 'Frame: ' + str(frame)
     frame += 1
-
     #Predict position and velocities
-    for i in range (1,numOfParticles):
+    for i in range (1,numOfParticles):  
+        particleVelocity[i][1] = particleVelocity[i][1] - (dt*9.82)
+        PredictedPosition[i][1] += (dt*particleVelocity[i][1])
+            
+        #Create Bounding box and bounding conditions
         
-             particleVelocity[i][1] = particleVelocity[i][1] - (dt*9.82)
-             PredictedPosition[i][1] += dt*particleVelocity[i][1]
-        
-    #Create Bounding box and bounding conditions
-    
     Constraints = []
     Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles)
-        
+            
     for i in range (1,numOfParticles):
-             PredictedPosition[i][0] = Constraints[0][i][0]
-             PredictedPosition[i][1] = Constraints[0][i][1]
-             PredictedPosition[i][2] = Constraints[0][i][2]
-             particleVelocity[i][0] = Constraints[1][i][0]
-             particleVelocity[i][1] = Constraints[1][i][1]
-             particleVelocity[i][2] = Constraints[1][i][2]
-    
-        #Find Neighboring particles
+                 PredictedPosition[i][0] = Constraints[0][i][0]
+                 PredictedPosition[i][1] = Constraints[0][i][1]
+                 PredictedPosition[i][2] = Constraints[0][i][2]
+                 particleVelocity[i][0] = Constraints[1][i][0]
+                 particleVelocity[i][1] = Constraints[1][i][1]
+                 particleVelocity[i][2] = Constraints[1][i][2]
         
-    Neighbours = findNeighboringParticles(numOfParticles,PredictedPosition, rad)
-
+            #Find Neighboring particles
+            
+    Neighbours = findNeighboringParticles(numOfParticles,PredictedPosition, rad,EPSILON)
+   
     Iter = 0
     while Iter < MaxSolverIterations :
-            
+                       
         Lambda = CalculateLambda(numOfParticles, PredictedPosition, Neighbours, ZeroRho, EPSILON, h)
             
         deltaPositions = deltaP(Lambda, ZeroRho, numOfParticles, PredictedPosition, h,Neighbours)
        
         for i in range (1 , numOfParticles):
-            PredictedPosition[i] =addVect(PredictedPosition[i],deltaPositions[i])
-      
-        particleCollision = calculateParticleCollisionResponse(PredictedPosition, particleVelocity, particleRadius, Neighbours,numOfParticles)
-        
-        for i in range (1 , numOfParticles):
-            
-            PredictedPosition[i][0] = particleCollision[0][i][0]
-            PredictedPosition[i][1] = particleCollision[0][i][1]
-            PredictedPosition[i][2] = particleCollision[0][i][2]
-            particleVelocity[i][0] = particleCollision[1][i][0]
-            particleVelocity[i][1] = particleCollision[1][i][1]
-            particleVelocity[i][2] = particleCollision[1][i][2]
-        
-       # Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles)
-        
-        for i in range (1 , numOfParticles):
-             
-             PredictedPosition[i][0] = Constraints[0][i][0]
-             PredictedPosition[i][1] = Constraints[0][i][1]
-             PredictedPosition[i][2] = Constraints[0][i][2]
-             particleVelocity[i][0] = Constraints[1][i][0]
-             particleVelocity[i][1] = Constraints[1][i][1]
-             particleVelocity[i][2] = Constraints[1][i][2]
-        
+            PredictedPosition[i][0] +=deltaPositions[i][0]
+            PredictedPosition[i][1] +=deltaPositions[i][1]
+            PredictedPosition[i][2] +=deltaPositions[i][2]
         Iter +=1
+        
+    particleCollision = calculateParticleCollisionResponse(PredictedPosition, particleVelocity, particleRadius, Neighbours,numOfParticles)
+    
+      
+    for i in range (1 , numOfParticles):        
+                 PredictedPosition[i][0] = particleCollision[0][i][0]
+                 PredictedPosition[i][1] = particleCollision[0][i][1]
+                 PredictedPosition[i][2] = particleCollision[0][i][2]
+                 particleVelocity[i][0] = particleCollision[1][i][0]
+                 particleVelocity[i][1] = particleCollision[1][i][1]
+                 particleVelocity[i][2] = particleCollision[1][i][2]
+            
+    Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles)
+            
+    for i in range (1 , numOfParticles):
+                 
+                 PredictedPosition[i][0] = Constraints[0][i][0]
+                 PredictedPosition[i][1] = Constraints[0][i][1]
+                 PredictedPosition[i][2] = Constraints[0][i][2]
+                 particleVelocity[i][0] = Constraints[1][i][0]
+                 particleVelocity[i][1] = Constraints[1][i][1]
+                 particleVelocity[i][2] = Constraints[1][i][2]
+        
+    
     #End while Loop    
     #print  particleVelocity       
     
