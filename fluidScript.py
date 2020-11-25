@@ -77,9 +77,9 @@ correctionK = 0.001
 correctionN = 4.0
 correctionDeltaQ = 0.3
 count = 0
-WidthParticles = 6#35
+WidthParticles = 2#35
 HeightParticles = 3
-LenghtParticles = 6#23
+LenghtParticles = 2#23
 particleRadius = 0.08
 for i in range( 0, WidthParticles ):
     for k in range( 0, HeightParticles ):
@@ -349,8 +349,8 @@ def calculateParticleCollisionResponse(Pos, Vel, Rad, Neighbours,numOfParticles)
         pos_i = Pos[i]
         for j in range (1, len(Neighbours[i])) :
             pos_j = [Pos[Neighbours[i][j]][0], Pos[Neighbours[i][j]][0], Pos[Neighbours[i][j]][0]]
-            distance =vecMult(subVect(pos_i,pos_j),subVect(pos_i,pos_j))
-            #print str(distance) + '<' + str(2 * Rad)
+            distance =math.sqrt(vecMult(subVect(pos_j,pos_i),subVect(pos_j,pos_i)))
+            print str(distance) + '<' + str(2 * Rad)
             if distance <= (2 * Rad) and distance > 0.0 : # COLLISION!
             
                 v_i = [Vel[i][0], Vel[i][1], Vel[i][2]]
