@@ -77,17 +77,17 @@ correctionK = 0.001
 correctionN = 4.0
 correctionDeltaQ = 0.3
 count = 0
-WidthParticles = 2#35
-HeightParticles = 3
-LenghtParticles = 2#23
+WidthParticles = 10#35
+HeightParticles = 2
+LenghtParticles = 10#23
 particleRadius = 0.08
 for i in range( 0, WidthParticles ):
-    for k in range( 0, HeightParticles ):
-        for j in range( 0, LenghtParticles ): 
+    for j in range( 0, HeightParticles ):
+        for k in range( 0, LenghtParticles ): 
             count=count+1
             result = cmds.polySphere( r=particleRadius, sx=1, sy=1, name='Particle#' )
             cmds.select('Particle' + str(count)) 
-            cmds.move(-i*0.16, 3+j*0.16, k*0.16,'Particle' + str(count))
+            cmds.move(-i*0.162, 3+j*0.16, k*0.162,'Particle' + str(count))
             
 
 cmds.setAttr( 'lambert1.transparency', 0.7,0.7,0.7, type = 'double3' )
@@ -204,12 +204,10 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, EPSI
     C_i = 0
     sumGradient = [0,0,0]
     Lambda = [0]* nrOfParticles
-
-    for i in range (0, nrOfParticles):
+    for i in range (1, nrOfParticles):
         Pos = predictedPositions[i]
-        for j in range (0, len(Neighbours[i])):
-           cmds.select(ListOfParticles[Neighbours[i][j]])
-           rjPos = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ") ]
+        for j in range (1, len(Neighbours[i])):
+           rjPos = [predictedPositions[Neighbours[i][j]][0], predictedPositions[Neighbours[i][j]][1], predictedPositions[Neighbours[i][j]][2]]
            #print 'pos' +str(Pos)
            #print 'posj' + str(rjPos)
            
@@ -248,9 +246,10 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
     deltaPos = []
     if len(deltaPos) > 0:
         deltaPos[:] = []
-    deltaPos.insert(0,[])       
+   
     newCorr = 0
     corrPoss = 0
+    
     for i in range (1,numOfParticles):
         lambdaI = lambdaa[i]
         posi = pos[i]
@@ -258,53 +257,56 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
         sumY = 0
         sumZ = 0
         for j in range (1,len(neighbours[i])):
-            cmds.select(ListOfParticles[neighbours[i][j]])
-            posj = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ") ]
-           
+            
+            posj = [pos[Neighbours[i][j]][0], pos[Neighbours[i][j]][1], pos[Neighbours[i][j]][2]]
+            
             lambdaJ = lambdaa[neighbours[i][j]]
             lambdaIJ = lambdaJ + lambdaI
-            newCorr = computeCorrectionScore(0.001, h, 4, 0.3, posi, posj)
-            spikyGradient = spikyGrad(posi, posj, h)
             
+            newCorr = computeCorrectionScore(0.1, h, 4, 0.3, posi, posj)
+            
+            spikyGradient = spikyGrad(posi, posj, h)
             sumX = sumX +  (newCorr + lambdaIJ)*(spikyGradient[0])
             sumY = sumY +  (newCorr + lambdaIJ)*(spikyGradient[1]) 
             sumZ = sumZ +  (newCorr + lambdaIJ)*(spikyGradient[2])
                 
-            sumX  = sumX * (1/rho_0)
-            sumY  = sumY * (1/rho_0)
-            sumZ  = sumZ * (1/rho_0)
+           # sumX  = sumX * (1/rho_0)
+           # sumY  = sumY * (1/rho_0)
+           # sumZ  = sumZ * (1/rho_0)
             corrPoss = [sumX, sumY, sumZ]
            
 
         deltaPos.append(corrPoss)
-     
+    deltaPos.insert(0,[])      
     return deltaPos
 
 #Find neigboring particles within a radius rad
 def computeCorrectionScore(k, h, n, dQ, p1, p2) :
     constraint = poly6Kernel(p1,p2,h) / poly6KernelAlternative(dQ*h,h)
+    print constraint
     return -k * math.pow(constraint, n)
 
 
 def findNeighboringParticles(nrOfParticles, Pos, rad,epsilon):
-    neighborMatrix = []
-    epsilon= 0.08
-    for i in range (1,nrOfParticles):
-        neighborList = []
-        for j in range (1,nrOfParticles):
-            particleDistance = lengthVec(Pos[i][0]-Pos[j][0], Pos[i][1]-Pos[j][1], Pos[i][2]-Pos[j][2])
-           # print 'dist:  ' + str(particleDistance)
+    neighbours = []
+    neighbours.append([0]) # dummy
 
-            if particleDistance < rad:
-                neighborList.append(j)
-                
-            
-            #print str(neighborList)
-        neighborMatrix.append(neighborList)
+    for i in range ( 1, nrOfParticles ): 
+        closestNeighbours = []
+
+        for j in range (1, nrOfParticles ):
+            if i == j :
+                continue
+            arrayDistance = subVect(Pos[i],Pos[j])
+            distance = math.sqrt(math.pow(arrayDistance[0], 2) + math.pow(arrayDistance[1], 2) + math.pow(arrayDistance[2], 2))
+
+            if(distance < rad) :
+                closestNeighbours.append(j)
         
-    neighborMatrix.insert(0,[]) 
-    
-    return neighborMatrix
+        neighbours.append(closestNeighbours)
+        
+    return neighbours
+
 
 
 def BoxConstraints(Pos,Vel,Rad,numOfParticles):
@@ -348,13 +350,13 @@ def calculateParticleCollisionResponse(Pos, Vel, Rad, Neighbours,numOfParticles)
     for i in range (1, numOfParticles) :
         pos_i = Pos[i]
         for j in range (1, len(Neighbours[i])) :
-            pos_j = [Pos[Neighbours[i][j]][0], Pos[Neighbours[i][j]][0], Pos[Neighbours[i][j]][0]]
+            pos_j = [Pos[Neighbours[i][j]][0], Pos[Neighbours[i][j]][1], Pos[Neighbours[i][j]][2]]
             distance =math.sqrt(vecMult(subVect(pos_j,pos_i),subVect(pos_j,pos_i)))
-            print str(distance) + '<' + str(2 * Rad)
-            if distance <= (2 * Rad) and distance > 0.0 : # COLLISION!
+         
+            if distance < (2 * Rad): # COLLISION!
             
                 v_i = [Vel[i][0], Vel[i][1], Vel[i][2]]
-                v_j = [ Pos[Neighbours[i][j]][0],  Pos[Neighbours[i][j]][1],  Pos[Neighbours[i][j]][2]]
+                v_j = [Vel[Neighbours[i][j]][0],  Vel[Neighbours[i][j]][1],  Vel[Neighbours[i][j]][2]]
 
                 vecBetweenParticles = [pos_j[0] - pos_i[0], pos_j[1] - pos_i[1], pos_j[2] - pos_i[2]]
                 collisionPoint = addVect(pos_i, vecBetweenParticles)
@@ -409,7 +411,7 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
           #calculate velocity and position from i's neighbors
           velj = [predictedVelocity[neighbours[i][j]][0], predictedVelocity[neighbours[i][j]][1], predictedVelocity[neighbours[i][j]][2]]
           cmds.select(ListOfParticles[Neighbours[i][j]])
-          posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
+          posJ =  [predictedPosition[Neighbours[i][j]][0], predictedPosition[Neighbours[i][j]][1], predictedPosition[Neighbours[i][j]][2]]
 
           #calculate vij from eq 15 in m�ller
           
@@ -434,7 +436,7 @@ def applyXSPH(c, h, Pos, Vel, neighbours,numOfParticles):
         velI = Vel[i]
         for j in range (1, len(neighbours[i])):
               cmds.select(ListOfParticles[Neighbours[i][j]])
-              posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
+              posJ =  [Pos[Neighbours[i][j]][0], Pos[Neighbours[i][j]][1], Pos[Neighbours[i][j]][2]]
               velJ = [Vel[Neighbours[i][j]][0],Vel[Neighbours[i][j]][1],Vel[Neighbours[i][j]][2]]
               
               W = poly6Kernel(posI,posJ, h)
@@ -492,11 +494,11 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
 dt = 0.0016
 MaxSolverIterations = 3
 rad = 0.3
-ZeroRho = 4000
+ZeroRho = 200
 h = 0.4
 c = 0.001
 EPSILON = 200
-KeyFrames = 20
+KeyFrames = 100
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
@@ -583,7 +585,7 @@ for j in range (1,KeyFrames):
         Lambda = CalculateLambda(numOfParticles, PredictedPosition, Neighbours, ZeroRho, EPSILON, h)
             
         deltaPositions = deltaP(Lambda, ZeroRho, numOfParticles, PredictedPosition, h,Neighbours)
-       
+        
         for i in range (1 , numOfParticles):
             PredictedPosition[i][0] +=deltaPositions[i][0]
             PredictedPosition[i][1] +=deltaPositions[i][1]
