@@ -38,7 +38,7 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 count = 0
 WidthParticles = 5#35
-HeightParticles = 5
+HeightParticles = 1
 LenghtParticles = 5#23
 particleRadius = 0.1
 for i in range( 0, WidthParticles ):
@@ -120,9 +120,9 @@ def spikyGrad(ri, rj, h):
     
   
     
-    xGradient = gradConstant*math.pow(h-r_len, 2) * r[0]
-    yGradient = gradConstant*math.pow(h-r_len, 2) * r[1]
-    zGradient = gradConstant*math.pow(h-r_len, 2) * r[2]
+    xGradient = gradConstant*math.pow(h-r_len, 3) * r[0]
+    yGradient = gradConstant*math.pow(h-r_len, 3) * r[1]
+    zGradient = gradConstant*math.pow(h-r_len, 3) * r[2]
     gradVec= [xGradient, yGradient, zGradient]
 
     return gradVec
@@ -191,7 +191,7 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, h):
 
     return Lambda
 
-#calculate delta position eq 12 in m�ller paper
+#calculate delta position eq 12 in m?ller paper
 
 def norm(VecIn):
     length=lengthVec(VecIn[0],VecIn[1],VecIn[2])
@@ -376,7 +376,7 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
           cmds.select(ListOfParticles[Neighbours[i][j]])
           posJ =  [predictedPosition[Neighbours[i][j]][0], predictedPosition[Neighbours[i][j]][1], predictedPosition[Neighbours[i][j]][2]]
 
-          #calculate vij from eq 15 in m�ller
+          #calculate vij from eq 15 in m?ller
           
           vij = [velj[0]-veli[0], velj[1]-veli[1], velj[2]-veli[2]]
           
@@ -429,7 +429,8 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
           vortLen = getLengthOfVec(vort)
           cmds.select(ListOfParticles[Neighbours[i][j]])
           posJ = [cmds.getAttr(".translateX"),cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
-          grad = spikyGrad(posi, posJ, h)
+ 
+          grad = vortGrad(subVect(posi,posJ),h)
           
           n = scalarMult(grad,vortLen)
          
@@ -451,13 +452,62 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
     return fVorticity
 
 
+def vortGrad(pos,h):
+    grad = 0
+    r = lengthVec(pos[0], pos[1], pos[2])
+    if r <= 0 and r> h:
+        return 0
+       
+    grad = (15/(2*3.14*math.pow(h,3))) * ( ((-1)*(math.pow(r,3)/(2*math.pow(h,3)))) + (math.pow(r,2)/(math.pow(h,2))) + (h/(2*r)) - 1)
+   
+    xGradient = grad * pos[0]
+    yGradient = grad* pos[1]
+    zGradient = grad * pos[2]
+    gradVec= [xGradient, yGradient, zGradient]
+    return gradVec
+
+#Surface generation
+
+def smoothingKernel(s):
+    return max(0,math.pow((1-math.pow(s,2)),3))
+
+
+def isoSurf(Pos,Neighbours,h):
+    xHat = [0,0,0]
+    rHat = 0
+    k_den = 0
+    isoSurface = []
+    
+    for i in range (1,numOfParticles):
+        x = Pos[i]
+
+        for j in range (1, len(Neighbours[i])):
+             x_i = Pos[Neighbours[i][j]]
+             xdistI = getLengthOfVec(subVect(x,x_i))
+             k_num = smoothingKernel(xdistI/h)
+
+             for k in range (1, len(Neighbours[j])):  
+                x_j = Pos[Neighbours[j][k]]
+                xdistJ = getLengthOfVec(subVect(x,x_j))
+                k_den += smoothingKernel(xdistJ/h)
+             w_i = k_num/k_den
+
+             xHat = addVect(xHat,scalarMult(x_i,w_i))
+             rHat = w_i * particleRadius
+             
+        xXhat = subVect(x,xHat)
+        res = math.sqrt(math.pow(xXhat[0],2)) + math.sqrt(math.pow(xXhat[1],2)) + math.sqrt(math.pow(xXhat[2],2))
+        isoSurface.append(res-rHat)   
+    isoSurface.insert(0,[])   
+    return len(isoSurface)
+
 #Simulation Loop
 
 #Constants
 dt = 0.016
-MaxSolverIterations = 40
+MaxSolverIterations = 20
 ZeroRho = 1000.0
-h = 0.5
+h = 1
 c = 0.1
 EPSILON = 200.0
 correctionK = 0.001
@@ -584,10 +634,10 @@ for j in range (1,KeyFrames):
     
     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
     f_Vorticity = fVorticity(vort, PredictedPosition, EPSILON, h,Neighbours)
-    XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
+   # XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
     
     for i in range (1, numOfParticles):
-        particleVelocity[i] =  addVect(ParicleVelocity[i],addVect(XSPH,scalarMult(f_Vorticity[i],dt)))
+        particleVelocity[i] =  addVect(particleVelocity[i],scalarMult(f_Vorticity[i],dt))
          
        
     for i in range (1, numOfParticles) :
@@ -596,8 +646,8 @@ for j in range (1,KeyFrames):
         cmds.setKeyframe(".translateY", value=PredictedPosition[i][1], time=frame)
         cmds.setKeyframe(".translateZ", value=PredictedPosition[i][2], time=frame)
 
-
-        
+    isoSurfaces = isoSurf(PredictedPosition,Neighbours,h)
+    print isoSurfaces
         
         
         
