@@ -270,7 +270,7 @@ def BoxConstraints(Pos,Vel,Rad,numOfParticles):
     xMin = -1+ Rad
     xMax = 3 - Rad
     yMin = 0
-    yMax = 2
+    yMax = 10
     zMin = -1 + Rad
     zMax = 1 - Rad
 
@@ -459,15 +459,17 @@ MaxSolverIterations = 40
 ZeroRho = 1000.0
 h = 0.5
 c = 0.1
-epsilon = 200.0
+EPSILON = 200.0
 correctionK = 0.001
 correctionN = 4.0
 correctionDeltaQ = 0.3
-
+PredictedPosition = []
+Neighbours = []
+Lambda = []
 numOfParticles = count+1
 
 #Animation
-KeyFrames = 50
+KeyFrames = 20
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
@@ -585,7 +587,7 @@ for j in range (1,KeyFrames):
     XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
     
     for i in range (1, numOfParticles):
-        particleVelocity[i] =  addVect(particleVelocity[i],scalarMult(f_Vorticity[i],dt))
+        particleVelocity[i] =  addVect(ParicleVelocity[i],addVect(XSPH,scalarMult(f_Vorticity[i],dt)))
          
        
     for i in range (1, numOfParticles) :
