@@ -38,7 +38,7 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 count = 0
 WidthParticles = 2#35
-HeightParticles = 6
+HeightParticles = 2
 LenghtParticles = 20#23
 particleRadius = 0.1
 for i in range( 0, WidthParticles ):
@@ -397,8 +397,8 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
     return vorticityVec
 
 def applyXSPH(c, h, Pos, Vel, neighbours,numOfParticles):
-    vNew = [0,0,0]
-    sumJ = [0,0,0]
+    vNew = []
+    sumJ = []
     for i in range (1, numOfParticles):
         posI = Pos[i]
         velI = Vel[i]
@@ -411,12 +411,11 @@ def applyXSPH(c, h, Pos, Vel, neighbours,numOfParticles):
               vIJ = subVect(velI,velJ)
 
               sumJ += scalarMult(vIJ,W)
-              sumJ = scalarMult(sumJ,c)
               
-              vNew = addVect(velI,sumJ)
-              
-              
-   
+        sumJ = scalarMult(sumJ,c)
+        vNew.append(addVect(velI,sumJ))
+        
+    vNew.insert(0,[])
     return vNew
     
 
@@ -451,7 +450,7 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
           res = norm(res)
           
           crossProduct = [(res[1]*vort[2])-res[2]*vort[1], -(res[0]*vort[2])-res[2]*vort[0], (res[0]*vort[1])-res[1]*vort[0]]
-          crossProduct = scalarMult(crossProduct,0.25)
+         # crossProduct = scalarMult(crossProduct,0.25)
           fVorticity.append(crossProduct)
     fVorticity.insert(0,[])
     return fVorticity
@@ -512,7 +511,7 @@ def isoSurf(Pos,Neighbours,h):
 dt = 0.016
 MaxSolverIterations = 20
 ZeroRho = 1000.0
-h = 1
+h = 0.6
 c = 0.1
 EPSILON = 200.0
 correctionK = 0.001
@@ -639,10 +638,10 @@ for j in range (1,KeyFrames):
     
     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
     f_Vorticity = fVorticity(vort, PredictedPosition, EPSILON, h,Neighbours)
-   # XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
+    XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
     
     for i in range (1, numOfParticles):
-        particleVelocity[i] =  addVect(particleVelocity[i],scalarMult(f_Vorticity[i],dt))
+        particleVelocity[i] =  addVect(particleVelocity[i],addVect(XSPH[i],scalarMult(f_Vorticity[i],dt)))
          
        
     for i in range (1, numOfParticles) :
