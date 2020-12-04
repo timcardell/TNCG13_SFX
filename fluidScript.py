@@ -37,9 +37,9 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 #Adding Spheres
 
 count = 0
-WidthParticles = 5#35
-HeightParticles = 1
-LenghtParticles = 5#23
+WidthParticles = 2#35
+HeightParticles = 6
+LenghtParticles = 20#23
 particleRadius = 0.1
 for i in range( 0, WidthParticles ):
     for j in range( 0, HeightParticles ):
@@ -47,7 +47,7 @@ for i in range( 0, WidthParticles ):
             count=count+1
             result = cmds.polySphere( r=particleRadius, sx=1, sy=1, name='Particle#' )
             cmds.select('Particle' + str(count)) 
-            cmds.move(-i*0.22, 0.4+j*0.232, k*0.232,'Particle' + str(count))
+            cmds.move(-i*0.22, j*0.232, k*0.232,'Particle' + str(count))
             
 for i in range( 0, WidthParticles ):
     for j in range( 0, HeightParticles ):
@@ -55,9 +55,14 @@ for i in range( 0, WidthParticles ):
             count=count+1
             result = cmds.polySphere( r=particleRadius, sx=1, sy=1, name='Particle#' )
             cmds.select('Particle' + str(count)) 
-            cmds.move(3-i*0.22, 0.4+j*0.232, k*0.232,'Particle' + str(count))
+            cmds.move(3-i*0.22, j*0.232, k*0.232,'Particle' + str(count))
                         
             
+
+cmds.setAttr( 'lambert1.refractions', 1 )
+cmds.setAttr( 'lambert1.refractiveIndex', 1.52 )
+cmds.setAttr( 'lambert1.color', 0, 0.5, 1, type = 'double3' )
+
 
 
 #-----Fucntipns to main simulation loop-------#
@@ -272,7 +277,7 @@ def BoxConstraints(Pos,Vel,Rad,numOfParticles):
     yMin = 0
     yMax = 10
     zMin = -1 + Rad
-    zMax = 1 - Rad
+    zMax = 5 - Rad
 
     for i in range (1,numOfParticles):
         if Pos[i][0] < xMin :
@@ -646,8 +651,8 @@ for j in range (1,KeyFrames):
         cmds.setKeyframe(".translateY", value=PredictedPosition[i][1], time=frame)
         cmds.setKeyframe(".translateZ", value=PredictedPosition[i][2], time=frame)
 
-    isoSurfaces = isoSurf(PredictedPosition,Neighbours,h)
-    print isoSurfaces
+   # signDistance = isoSurf(PredictedPosition,Neighbours,h)
+    #print signDistance
         
         
         
