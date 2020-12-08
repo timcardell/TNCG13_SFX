@@ -1,12 +1,10 @@
 import maya.cmds as cmds
 import math
 import maya.mel as mel
-
 # delete unnessesary scene objects
 
 
 ListOfParticles = cmds.ls('Particle*', o=True, tr=True)
-
 
 if len(ListOfParticles) > 0:
     cmds.delete(ListOfParticles)
@@ -38,25 +36,16 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 count = 0
 WidthParticles = 5#35
-HeightParticles = 5
+HeightParticles = 6
 LenghtParticles = 5#23
-particleRadius = 0.1
+particleRadius = 0.05
 for i in range( 0, WidthParticles ):
     for j in range( 0, HeightParticles ):
         for k in range( 0, LenghtParticles ): 
             count=count+1
             result = cmds.polySphere( r=particleRadius, sx=1, sy=1, name='Particle#' )
             cmds.select('Particle' + str(count)) 
-            cmds.move(-i*0.22, 0.4+j*0.232, k*0.232,'Particle' + str(count))
-            
-for i in range( 0, WidthParticles ):
-    for j in range( 0, HeightParticles ):
-        for k in range( 0, LenghtParticles ): 
-            count=count+1
-            result = cmds.polySphere( r=particleRadius, sx=1, sy=1, name='Particle#' )
-            cmds.select('Particle' + str(count)) 
-            cmds.move(3-i*0.22, 0.4+j*0.232, k*0.232,'Particle' + str(count))
-                        
+            cmds.move(-i*0.11, 0.4+j*0.11, k*0.11,'Particle' + str(count))
             
 
 
@@ -187,7 +176,7 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, h):
 
         C_i = (rho_i / ZeroRho)- 1
 
-        Lambda[i] = ((-1)*C_i)/(dotSum + 200)
+        Lambda[i] = ((-1)*C_i)/(dotSum + 1000)
 
     return Lambda
 
@@ -265,14 +254,14 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
 
 
 
-def BoxConstraints(Pos,Vel,Rad,numOfParticles):
+def BoxConstraints(Pos,Vel,Rad,numOfParticles,variable):
 
-    xMin = -1+ Rad
-    xMax = 5 - Rad
+    xMin = -variable+ Rad
+    xMax = 1 - Rad
     yMin = 0
-    yMax = 2
-    zMin = -1 + Rad
-    zMax = 3 - Rad
+    yMax = 6
+    zMin = -1.2 + Rad
+    zMax = 1.2 - Rad
 
     for i in range (1,numOfParticles):
         if Pos[i][0] < xMin :
@@ -386,7 +375,7 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
 
           #cross poduct of gradient and vij
           crossProduct = [(vij[1]*grad[2])-vij[2]*grad[1], -(vij[0]*grad[2])-vij[2]*grad[0], (vij[0]*grad[1])-vij[1]*grad[0]]
-          vorticityVec.append(crossProduct)
+        vorticityVec.append(crossProduct)
     #vorticityVec = crossProduct
     vorticityVec.insert(0,[])
     return vorticityVec
@@ -444,17 +433,15 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
           res = norm(res)
           
           crossProduct = [(res[1]*vort[2])-res[2]*vort[1], -(res[0]*vort[2])-res[2]*vort[0], (res[0]*vort[1])-res[1]*vort[0]]
-          crossProduct = scalarMult(crossProduct,0.25)
+          crossProduct = scalarMult(crossProduct,0.01)
           fVorticity.append(crossProduct)
     fVorticity.insert(0,[])
     return fVorticity
 
-
 #Simulation Loop
-
 #Constants
 dt = 0.016
-MaxSolverIterations = 40
+MaxSolverIterations = 8
 ZeroRho = 1000.0
 h = 1.0
 c = 0.1
@@ -466,13 +453,13 @@ correctionDeltaQ = 0.3
 numOfParticles = count+1
 
 #Animation
-KeyFrames = 10
+KeyFrames = 30
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
 frame = startTime
 
-
+var = 4
 particleVelocity = [0]
 Neighbours = [0]
 PredictedPosition=[0]
@@ -522,7 +509,7 @@ for j in range (1,KeyFrames):
         PredictedPosition[i][1]= PredictedPosition[i][1] + (dt*particleVelocity[i][1])
             
     #Create Bounding box and bounding conditions
-    Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles)
+    Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles,var)
            
     for i in range (1,numOfParticles):
                  PredictedPosition[i][0] = Constraints[0][i][0]
@@ -562,7 +549,7 @@ for j in range (1,KeyFrames):
                      particleVelocity[i][1] = particleCollision[1][i][1]
                      particleVelocity[i][2] = particleCollision[1][i][2]
                 
-        Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles)
+        Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles,var)
                 
         for i in range (1 , numOfParticles):
                      
@@ -587,7 +574,7 @@ for j in range (1,KeyFrames):
     XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
     
     for i in range (1, numOfParticles):
-        particleVelocity[i] =  addVect(particleVelocity[i],addVect(XSPH,scalarMult(f_Vorticity[i],dt)))
+        particleVelocity[i] =  addVect(particleVelocity[i],addVect(XSPH[i],scalarMult(f_Vorticity[i],dt)))
          
        
     for i in range (1, numOfParticles) :
@@ -595,8 +582,10 @@ for j in range (1,KeyFrames):
         cmds.setKeyframe(".translateX", value=PredictedPosition[i][0], time=frame)
         cmds.setKeyframe(".translateY", value=PredictedPosition[i][1], time=frame)
         cmds.setKeyframe(".translateZ", value=PredictedPosition[i][2], time=frame)
-
-
+            
+    var = var - 0.05
+    
+print 'Frame: ' + str(KeyFrames)
         
         
         
