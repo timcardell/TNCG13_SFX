@@ -36,7 +36,7 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 count = 0
 WidthParticles = 5#35
-HeightParticles = 15
+HeightParticles = 20
 LenghtParticles = 5#23
 particleRadius = 0.05
 for i in range( 0, WidthParticles ):
@@ -180,7 +180,7 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, h):
            sumGradient = scalarMult(sumGradient,(-1/ZeroRho))
             
            dotSum += vecMult(sumGradient,sumGradient)
-        res = ((-1)*C_i)/(dotSum + 1000)      
+        res = ((-1)*C_i)/(dotSum + 7)      
 
         Lambda.append(res)
     Lambda.insert(0,[])    
@@ -200,7 +200,7 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
     deltaPos = []
     newCorr = 0
     corrPoss = 0
-    alpha = 0.9
+    alpha = 2
     for i in range (1,numOfParticles):
         lambdaI = lambdaa[i]
         posi = pos[i]
@@ -260,11 +260,11 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
 def BoxConstraints(Pos,Vel,Rad,numOfParticles,variable):
 
     xMin = -variable+ Rad
-    xMax = 1 - Rad
+    xMax = 0.7 - Rad
     yMin = 0
     yMax = 6
-    zMin = -1.2 + Rad
-    zMax = 1.2 - Rad
+    zMin = -0.7 + Rad
+    zMax = 0.7 - Rad
 
     for i in range (1,numOfParticles):
         if Pos[i][0] < xMin :
@@ -443,7 +443,7 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
 #Simulation Loop
 #Constants
 dt = 0.016
-MaxSolverIterations = 15
+MaxSolverIterations = 35
 ZeroRho = 1000.0
 h = 1.0
 c = 0.01
@@ -455,7 +455,7 @@ correctionDeltaQ = 0.3
 numOfParticles = count+1
 
 #Animation
-KeyFrames = 15
+KeyFrames = 25
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
@@ -573,10 +573,10 @@ for j in range (1,KeyFrames):
         cmds.setKeyframe(".translateX", value=PredictedPosition[i][0], time=frame)
         cmds.setKeyframe(".translateY", value=PredictedPosition[i][1], time=frame)
         cmds.setKeyframe(".translateZ", value=PredictedPosition[i][2], time=frame)
-   # if j <= KeyFrames/2:
-       # var = var - 0.05
-  #  else:            
-       # var = var + 0.05
+    if j <= KeyFrames/2:
+        var = var - 0.05
+    else:            
+        var = var + 0.05
     
 print 'Frame: ' + str(KeyFrames)
         
