@@ -36,7 +36,7 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 count = 0
 WidthParticles = 5#35
-HeightParticles = 6
+HeightParticles = 15
 LenghtParticles = 5#23
 particleRadius = 0.05
 for i in range( 0, WidthParticles ):
@@ -47,6 +47,11 @@ for i in range( 0, WidthParticles ):
             cmds.select('Particle' + str(count)) 
             cmds.move(-i*0.11, 0.4+j*0.11, k*0.11,'Particle' + str(count))
             
+
+# Create transparent material for transparent boxs
+cmds.setAttr( 'lambert1.refractions', 1 )
+cmds.setAttr( 'lambert1.refractiveIndex', 1.33 )
+cmds.setAttr( 'lambert1.color', 0.1, .1, 1, type = 'double3' )
 
 
 #-----Fucntipns to main simulation loop-------#
@@ -149,18 +154,21 @@ def projectVect(Vec1, Vec2) :
 # create lambda from equation ......
 
 def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, h):
-    rho_i = 0
     C_i = 0
     sumGradient = [0,0,0]
-    Lambda = [0]* nrOfParticles
+    Lambda = []
+    dotSum = 0
+    
     for i in range (1, nrOfParticles):
         Pos = predictedPositions[i]
+        rho_i = 0
+                    
         for j in range (1, len(Neighbours[i])):
            rjPos = [predictedPositions[Neighbours[i][j]][0], predictedPositions[Neighbours[i][j]][1], predictedPositions[Neighbours[i][j]][2]]
 
-           
            rho_i += poly6Kernel(Pos, rjPos, h)
-           
+           C_i = (rho_i / ZeroRho) - 1
+            
            gradientPk = spikyGrad(Pos, rjPos, h)
 
            kernel =  poly6Kernel(Pos, rjPos, h)
@@ -169,14 +177,13 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, h):
            
            sumGradient = addVect(sumGradient,kernelDone)
 
-        sumGradient = scalarMult(sumGradient,(1/ZeroRho))
+           sumGradient = scalarMult(sumGradient,(-1/ZeroRho))
+            
+           dotSum += vecMult(sumGradient,sumGradient)
+        res = ((-1)*C_i)/(dotSum + 1000)      
 
-        dotSum = vecMult(sumGradient,sumGradient)
-
-
-        C_i = (rho_i / ZeroRho)- 1
-
-        Lambda[i] = ((-1)*C_i)/(dotSum + 1000)
+        Lambda.append(res)
+    Lambda.insert(0,[])    
 
     return Lambda
 
@@ -189,12 +196,11 @@ def norm(VecIn):
 def getLengthOfVec(VecIn) :
     return math.sqrt(vecMult(VecIn,VecIn))
 
-
 def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
     deltaPos = []
     newCorr = 0
     corrPoss = 0
-    
+    alpha = 0.9
     for i in range (1,numOfParticles):
         lambdaI = lambdaa[i]
         posi = pos[i]
@@ -202,22 +208,19 @@ def deltaP(lambdaa, rho_0, numOfParticles, pos, h, neighbours):
         sumY = 0
         sumZ = 0
         for j in range (1,len(neighbours[i])):
-        
-            posj = [pos[Neighbours[i][j]][0], pos[Neighbours[i][j]][1], pos[Neighbours[i][j]][2]]
-            
-            lambdaJ = lambdaa[neighbours[i][j]]
-            lambdaIJ = lambdaJ + lambdaI
-            
-            newCorr = computeCorrectionScore(0.1, h, 4, 0.3, posi, posj)
+            posj = [pos[neighbours[i][j]][0], pos[neighbours[i][j]][1], pos[neighbours[i][j]][2]]
+           
+            newCorr = computeCorrectionScore(0.1, h, 4, 0.1, posi, posj)
             
             spikyGradient = spikyGrad(posi, posj, h)
-            sumX = sumX +  (newCorr + lambdaIJ)*(spikyGradient[0])
-            sumY = sumY +  (newCorr + lambdaIJ)*(spikyGradient[1]) 
-            sumZ = sumZ +  (newCorr + lambdaIJ)*(spikyGradient[2])
+            
+            sumX = sumX + ( lambdaI * (spikyGradient[0]))
+            sumY = sumY + ( lambdaI * (spikyGradient[1]))
+            sumZ = sumZ + ( lambdaI * (spikyGradient[2]))
                 
-            sumX  = sumX * (1/rho_0)
-            sumY  = sumY * (1/rho_0)
-            sumZ  = sumZ * (1/rho_0)
+            sumX  = sumX * -alpha * (1/rho_0)
+            sumY  = sumY * -alpha * (1/rho_0)
+            sumZ  = sumZ * -alpha * (1/rho_0)
             corrPoss = [sumX, sumY, sumZ]
            
 
@@ -374,7 +377,7 @@ def vorticityConfinement(predictedVelocity, predictedPosition, neighbours, h, nu
           grad = spikyGrad(posi, posJ, h)
 
           #cross poduct of gradient and vij
-          crossProduct = [(vij[1]*grad[2])-vij[2]*grad[1], -(vij[0]*grad[2])-vij[2]*grad[0], (vij[0]*grad[1])-vij[1]*grad[0]]
+          crossProduct = [(vij[1]*grad[2])-vij[2]*grad[1], -(vij[0]*grad[2]-vij[2]*grad[0]), (vij[0]*grad[1])-vij[1]*grad[0]]
         vorticityVec.append(crossProduct)
     #vorticityVec = crossProduct
     vorticityVec.insert(0,[])
@@ -398,7 +401,6 @@ def applyXSPH(c, h, Pos, Vel, neighbours,numOfParticles):
               
         sumJ = scalarMult(sumJ,c)
         vNew.append(addVect(velI,sumJ))
-        
     vNew.insert(0,[])
     return vNew
     
@@ -432,7 +434,7 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
              
           res = norm(res)
           
-          crossProduct = [(res[1]*vort[2])-res[2]*vort[1], -(res[0]*vort[2])-res[2]*vort[0], (res[0]*vort[1])-res[1]*vort[0]]
+          crossProduct = [(res[1]*vort[2])-res[2]*vort[1], -(res[0]*vort[2]-res[2]*vort[0]), (res[0]*vort[1])-res[1]*vort[0]]
           crossProduct = scalarMult(crossProduct,0.01)
           fVorticity.append(crossProduct)
     fVorticity.insert(0,[])
@@ -441,10 +443,10 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
 #Simulation Loop
 #Constants
 dt = 0.016
-MaxSolverIterations = 8
+MaxSolverIterations = 15
 ZeroRho = 1000.0
 h = 1.0
-c = 0.1
+c = 0.01
 epsilon = 200.0
 correctionK = 0.001
 correctionN = 4.0
@@ -453,13 +455,13 @@ correctionDeltaQ = 0.3
 numOfParticles = count+1
 
 #Animation
-KeyFrames = 30
+KeyFrames = 15
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
 frame = startTime
 
-var = 4
+var = 1
 particleVelocity = [0]
 Neighbours = [0]
 PredictedPosition=[0]
@@ -503,27 +505,18 @@ for j in range (1,KeyFrames):
     print 'Frame: ' + str(frame)
     frame += 1
     
+    ##OK
     #Predict position and velocities
     for i in range (1,numOfParticles):  
         particleVelocity[i][1] = particleVelocity[i][1] - (dt*9.82)
         PredictedPosition[i][1]= PredictedPosition[i][1] + (dt*particleVelocity[i][1])
             
-    #Create Bounding box and bounding conditions
-    Constraints = BoxConstraints(PredictedPosition,particleVelocity,particleRadius,numOfParticles,var)
-           
-    for i in range (1,numOfParticles):
-                 PredictedPosition[i][0] = Constraints[0][i][0]
-                 PredictedPosition[i][1] = Constraints[0][i][1]
-                 PredictedPosition[i][2] = Constraints[0][i][2]
-                 particleVelocity[i][0] = Constraints[1][i][0]
-                 particleVelocity[i][1] = Constraints[1][i][1]
-                 particleVelocity[i][2] = Constraints[1][i][2]
-        
+    #Ok    
     #Find Neighboring particles      
     Neighbours = findNeighboringParticles(numOfParticles,PredictedPosition, h)
     
     
-    
+    #Ok according to Muller
     #Iteration loop
     Iter = 0
     while Iter < MaxSolverIterations :
@@ -532,15 +525,8 @@ for j in range (1,KeyFrames):
           
         deltaPositions = deltaP(Lambda, ZeroRho, numOfParticles, PredictedPosition, h,Neighbours)
         
-        for i in range (1 , numOfParticles):
-            PredictedPosition[i][0] +=deltaPositions[i][0]
-            PredictedPosition[i][1] +=deltaPositions[i][1]
-            PredictedPosition[i][2] +=deltaPositions[i][2]
-        Iter +=1
-        
         particleCollision = calculateParticleCollisionResponse(PredictedPosition, particleVelocity, particleRadius, Neighbours,numOfParticles)
         
-          
         for i in range (1 , numOfParticles):        
                      PredictedPosition[i][0] = particleCollision[0][i][0]
                      PredictedPosition[i][1] = particleCollision[0][i][1]
@@ -559,7 +545,15 @@ for j in range (1,KeyFrames):
                      particleVelocity[i][0] = Constraints[1][i][0]
                      particleVelocity[i][1] = Constraints[1][i][1]
                      particleVelocity[i][2] = Constraints[1][i][2]
+            
+        for i in range (1 , numOfParticles):
+            PredictedPosition[i][0] +=deltaPositions[i][0]
+            PredictedPosition[i][1] +=deltaPositions[i][1]
+            PredictedPosition[i][2] +=deltaPositions[i][2]
+        Iter +=1
         
+      
+
     
     #End while Loop    
     #print  particleVelocity       
@@ -572,18 +566,17 @@ for j in range (1,KeyFrames):
     vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
     f_Vorticity = fVorticity(vort, PredictedPosition, epsilon, h,Neighbours)
     XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
-    
-    for i in range (1, numOfParticles):
-        particleVelocity[i] =  addVect(particleVelocity[i],addVect(XSPH[i],scalarMult(f_Vorticity[i],dt)))
-         
-       
+                
     for i in range (1, numOfParticles) :
+        particleVelocity[i] =  addVect(particleVelocity[i],addVect(XSPH[i],scalarMult(f_Vorticity[i],dt)))
         cmds.select( 'Particle'+str(i) )
         cmds.setKeyframe(".translateX", value=PredictedPosition[i][0], time=frame)
         cmds.setKeyframe(".translateY", value=PredictedPosition[i][1], time=frame)
         cmds.setKeyframe(".translateZ", value=PredictedPosition[i][2], time=frame)
-            
-    var = var - 0.05
+   # if j <= KeyFrames/2:
+       # var = var - 0.05
+  #  else:            
+       # var = var + 0.05
     
 print 'Frame: ' + str(KeyFrames)
         
