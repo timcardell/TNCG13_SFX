@@ -36,7 +36,7 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 count = 0
 WidthParticles = 5#35
-HeightParticles = 5
+HeightParticles = 20
 LenghtParticles = 5#23
 particleRadius = 0.05
 for i in range( 0, WidthParticles ):
@@ -180,7 +180,7 @@ def CalculateLambda(nrOfParticles, predictedPositions, Neighbours, ZeroRho, h):
            sumGradient = scalarMult(sumGradient,(-1/ZeroRho))
             
            dotSum += vecMult(sumGradient,sumGradient)
-        res = ((-1)*C_i)/(dotSum + 7)      
+        res = ((-1)*C_i)/(dotSum + 0.1)      
 
         Lambda.append(res)
     Lambda.insert(0,[])    
@@ -259,11 +259,11 @@ def findNeighboringParticles(nrOfParticles, Pos, rad):
 
 def BoxConstraints(Pos,Vel,Rad,numOfParticles,variable):
 
-    xMin = -variable+ Rad
+    xMin = -1+ Rad
     xMax = 0.7 - Rad
     yMin = 0
     yMax = 6
-    zMin = -0.7 + Rad
+    zMin = -1.5 + Rad
     zMax = 0.7 - Rad
 
     for i in range (1,numOfParticles):
@@ -443,7 +443,7 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
 #Simulation Loop
 #Constants
 dt = 0.016
-MaxSolverIterations = 15
+MaxSolverIterations = 5
 ZeroRho = 1000.0
 h = 1.0
 c = 0.01
@@ -455,7 +455,7 @@ correctionDeltaQ = 0.3
 numOfParticles = count+1
 
 #Animation
-KeyFrames = 15
+KeyFrames = 25
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
@@ -563,12 +563,12 @@ for j in range (1,KeyFrames):
         pos = [cmds.getAttr(".translateX"), cmds.getAttr(".translateY"),cmds.getAttr(".translateZ")]
         particleVelocity[n] = scalarMult(subVect(PredictedPosition[n], pos), (1/dt))
     
-    vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
-    f_Vorticity = fVorticity(vort, PredictedPosition, epsilon, h,Neighbours)
+    #vort = vorticityConfinement(particleVelocity, PredictedPosition, Neighbours, h, numOfParticles)
+    #f_Vorticity = fVorticity(vort, PredictedPosition, epsilon, h,Neighbours)
     XSPH = applyXSPH(c, h, PredictedPosition, particleVelocity, Neighbours,numOfParticles)
                 
     for i in range (1, numOfParticles) :
-        particleVelocity[i] =  addVect(particleVelocity[i],XSPH[i])
+        particleVelocity[i] =  XSPH[i]
         cmds.select( 'Particle'+str(i) )
         cmds.setKeyframe(".translateX", value=PredictedPosition[i][0], time=frame)
         cmds.setKeyframe(".translateY", value=PredictedPosition[i][1], time=frame)
