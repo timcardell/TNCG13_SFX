@@ -36,7 +36,7 @@ cmds.ambientLight( AmbLight, q=True, intensity=True )
 
 count = 0
 WidthParticles = 5#35
-HeightParticles = 20
+HeightParticles = 10
 LenghtParticles = 5#23
 particleRadius = 0.05
 for i in range( 0, WidthParticles ):
@@ -293,7 +293,7 @@ def BoxConstraints(Pos,Vel,Rad,numOfParticles,variable):
 
 
 def calculateParticleCollisionResponse(Pos, Vel, Rad, Neighbours,numOfParticles):
-    offset = 0.01
+    offset = 0.02
 
     for i in range (1, numOfParticles) :
         pos_i = Pos[i]
@@ -443,10 +443,10 @@ def fVorticity(vorticity, particlePosition, epsilon, h,Neighbours):
 #Simulation Loop
 #Constants
 dt = 0.016
-MaxSolverIterations = 5
+MaxSolverIterations = 3
 ZeroRho = 1000.0
 h = 1.0
-c = 0.01
+c = 0.5
 epsilon = 200.0
 correctionK = 0.001
 correctionN = 4.0
@@ -455,7 +455,7 @@ correctionDeltaQ = 0.3
 numOfParticles = count+1
 
 #Animation
-KeyFrames = 25
+KeyFrames = 30
 cmds.playbackOptions( playbackSpeed = 0, maxPlaybackSpeed = 1, min = 1, max = 150 )
 startTime = cmds.playbackOptions( query = True, minTime = True )
 endTime = cmds.playbackOptions( query = True, maxTime = True )
